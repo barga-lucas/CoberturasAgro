@@ -44,6 +44,11 @@ Work in progress. Data ingestion done for:
 
 ## First results: the basis (`src/coberturas/analisis/base.py`)
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/base_dark.png">
+  <img alt="Daily Rosario soybean basis 2020-2026: stable around −3 USD/t, with spikes up to 250 USD/t during the dólar soja program windows" src="docs/img/base_light.png">
+</picture>
+
 **Basis = Rosario physical price (pizarra ARS/t ÷ same-day BCRA A 3500) − A3 SOJ.ROS futures
 settlement (USD/t).** Only Rosario-delivery contracts in the liquid months (Jan, May, Jul, Sep,
 Nov, which concentrate almost all volume).
@@ -87,6 +92,11 @@ expire about a month before their future). Options are at-the-money at entry, bo
 entry settlement premium and sold at the exit settlement premium.
 
 ### Results — main sample (excluding "dólar soja" periods)
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/estrategias_dark.png">
+  <img alt="Range of hedging results per strategy for cases A and B: futures hedges have the narrowest range and remove 84% of the risk; put 31%, call 67%" src="docs/img/estrategias_light.png">
+</picture>
 
 90 scenarios, 6 seasons. *Effectiveness* = share of the unhedged variance removed.
 
@@ -167,3 +177,9 @@ python -m venv .venv
 ```
 
 Raw downloads are cached in `data/raw/` (not versioned).
+
+Regenerate the charts (downloads or reads the cached data and recomputes everything):
+
+```bash
+.venv/Scripts/python scripts/graficos.py
+```
