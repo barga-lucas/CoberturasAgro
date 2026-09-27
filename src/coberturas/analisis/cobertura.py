@@ -263,3 +263,34 @@ def resumen(esc: pd.DataFrame, caso: str, regimenes: set[str], muestra: str = "c
             }
         )
     return pd.DataFrame(filas)
+
+
+DIAS_POR_MES = 365.25 / 12
+
+
+def equilibrio_almacenaje(esc: pd.DataFrame, regimenes: set[str]) -> pd.DataFrame:
+    """Caso A cubierto con futuros: cuánto rinde guardar, para compararlo con los costos.
+
+    No se asume ningún costo de almacenaje ni tasa de financiación (no hay una
+    fuente pública confiable y actual). En su lugar, por escenario:
+    - `meses`: días entre entrada y salida / 30,4375 (= 365,25 / 12).
+    - `ganancia_mensual`: resultado A_futuro / meses (USD/tn por mes). Es el
+      costo mensual de almacenaje + financiación que haría el resultado cero.
+    - `rendimiento_anual`: A_futuro / precio físico de entrada, anualizado
+      simple (x 12 / meses). Es la tasa anual en USD sobre el valor de la
+      mercadería que, como costo de financiación, se comería toda la ganancia.
+    """
+    desconocidos = set(regimenes) - {"normal", "blend", "dolar_soja"}
+    if desconocidos:
+        raise ValueError(f"Regímenes desconocidos: {sorted(desconocidos)}")
+    sub = esc[(esc["disponible"] == True) & esc["regimen"].isin(regimenes)].copy()  # noqa: E712
+    if sub.empty:
+        raise CoberturaError("No hay escenarios disponibles para esos regímenes.")
+    dias = [(pd.Timestamp(s) - pd.Timestamp(e)).days for e, s in zip(sub["entrada"], sub["salida"])]
+    if min(dias) <= 0:
+        raise CoberturaError("Escenario con salida anterior o igual a la entrada.")
+    sub["meses"] = [d / DIAS_POR_MES for d in dias]
+    sub["ganancia_mensual"] = sub["A_futuro"] / sub["meses"]
+    sub["rendimiento_anual"] = sub["A_futuro"] / sub["s0"] * 12 / sub["meses"]
+    return sub[["campania", "mes_entrada", "mes_salida", "regimen", "meses", "A_futuro", "s0",
+                "ganancia_mensual", "rendimiento_anual"]].reset_index(drop=True)

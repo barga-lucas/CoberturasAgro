@@ -211,3 +211,38 @@ class TestAuditoriaCodexCobertura:
         esc = self._esc().assign(disponible=False)
         with pytest.raises(cob.CoberturaError, match="No hay escenarios"):
             cob.resumen(esc, "A", {"normal"})
+
+
+class TestEquilibrioAlmacenaje:
+    def test_ganancia_mensual_y_rendimiento_anual(self):
+        esc = pd.DataFrame(
+            {
+                "campania": [2021],
+                "mes_entrada": [3],
+                "mes_salida": [9],
+                "disponible": [True],
+                "regimen": ["normal"],
+                "entrada": [D(2021, 3, 31)],
+                "salida": [D(2021, 9, 30)],
+                "A_futuro": [12.0],
+                "s0": [400.0],
+            }
+        )
+        r = cob.equilibrio_almacenaje(esc, {"normal"}).iloc[0]
+        meses = 183 / (365.25 / 12)
+        assert r["meses"] == pytest.approx(meses)
+        assert r["ganancia_mensual"] == pytest.approx(12.0 / meses)
+        assert r["rendimiento_anual"] == pytest.approx(12.0 / 400.0 * 12 / meses)
+
+    def test_filtra_regimen_y_rechaza_desconocido(self):
+        esc = pd.DataFrame(
+            {
+                "campania": [2021, 2023], "mes_entrada": [3, 3], "mes_salida": [9, 9],
+                "disponible": [True, True], "regimen": ["normal", "dolar_soja"],
+                "entrada": [D(2021, 3, 31), D(2023, 3, 31)], "salida": [D(2021, 9, 30), D(2023, 9, 29)],
+                "A_futuro": [12.0, 90.0], "s0": [400.0, 500.0],
+            }
+        )
+        assert len(cob.equilibrio_almacenaje(esc, {"normal"})) == 1
+        with pytest.raises(ValueError):
+            cob.equilibrio_almacenaje(esc, {"otro"})

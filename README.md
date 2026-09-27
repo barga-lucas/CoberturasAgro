@@ -126,6 +126,28 @@ the paired comparison on the common sample gives the same picture.
 4. **The unhedged averages are not a structural result.** They mainly reflect the price rallies
    of 2020 and 2025 in a sample of only six seasons.
 
+### Does storing pay? Break-even storage and financing cost
+
+The +12.8 USD/t that a long, futures-hedged elevator earned is **before storage and
+financing costs**. There is no reliable public source for current elevator storage tariffs
+or funding rates, so instead of assuming them the backtest reports the **break-even**: the
+cost that would bring each scenario's result to zero (`equilibrio_almacenaje`).
+
+| Main sample (90 scenarios) | 25th pct | Median | 75th pct |
+|---|---:|---:|---:|
+| Basis gain per month held (USD/t/month) | 0.7 | **2.8** | 4.8 |
+| Same gain as a simple annual USD return on the grain's value | 2% | **12%** | 21% |
+
+- The hedged position made money in **82%** of scenarios before costs. It would still have
+  covered a total storage + financing cost of **2 USD/t/month in 58%** of them, and of
+  3 USD/t/month in 48%.
+- **Read it like a finance desk:** in the median scenario, storing hedged soybeans paid about
+  12% a year in dollars on the capital tied up in grain. If the elevator's cost of funding
+  plus storage is below that, carrying inventory with a futures hedge was worth it.
+- Exits in October–November hedge with the next year's May (new-crop) contract, so their
+  larger gains include the old-crop/new-crop spread. They are not directly comparable with
+  the June–September exits.
+
 ### "Dólar soja" periods, reported separately
 
 24 scenarios, 2 seasons (2022–2023), in which the holding period overlaps a Programa de
@@ -144,8 +166,8 @@ sample: the basis stayed normal in 2024.
 ### Limitations
 
 - **Small sample:** six seasons. The 18 scenarios within a season are highly correlated.
-- **No costs:** commissions, margin financing, premium financing and storage costs are all
-  left out.
+- **No costs in the P&L:** commissions, margin financing, premium financing and storage costs
+  are left out. Storage and financing are instead reported as a break-even.
 - **Retrospective monthly comparison:** if the last day of a month has no price, the previous
   day is used, which is only known after the fact.
 - **Only one hedge ratio (1:1) and one strike rule (at the money).**
