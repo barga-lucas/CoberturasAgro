@@ -66,6 +66,80 @@ Nov, which concentrate almost all volume).
   end dates of each program **still have to be checked against the Boletín Oficial** before
   they are encoded.
 
+## Hedging backtest (`src/coberturas/analisis/cobertura.py`)
+
+### Two elevator cases
+
+Following the BCR training material on grain elevators, an elevator hedges its **net exposed
+position**, which can go either way:
+
+- **Case A — long physical.** Bought soybeans "a precio" and holds them. Loses if prices fall.
+  Hedges: sell futures, or buy a put.
+- **Case B — short physical.** Received soybeans "a fijar" (the farmer fixes the price later)
+  but already sold them "a precio" to free up silo space. Loses if prices rise before the
+  farmer fixes. Hedges: buy futures, or buy a call.
+
+**Scenarios:** enter at the end of March, April or May (harvest intake) and exit at the end of
+June … November (when farmers fix prices): 18 scenarios per season, 2020–2026. Results are in
+USD per tonne, one tonne hedged 1:1. The hedge contract, the same for futures and options, is
+the first SOJ.ROS May/Jul/Nov contract at least two months after the exit month (options
+expire about a month before their future). Options are at-the-money at entry, bought at the
+entry settlement premium and sold at the exit settlement premium.
+
+### Results — main sample (excluding "dólar soja" periods)
+
+90 scenarios, 6 seasons. *Effectiveness* = share of the unhedged variance removed.
+
+| | Mean | Worst | Std. dev. | Effectiveness |
+|---|---:|---:|---:|---:|
+| **A** unhedged | +19.6 | −59.0 | 42.0 | — |
+| **A** short futures | +12.8 | −27.4 | 16.6 | **84%** |
+| **A** long put | +13.2 | −40.6 | 31.1 | 31%\* |
+| **B** unhedged | −19.6 | −127.3 | 42.0 | — |
+| **B** long futures | −12.8 | −61.7 | 16.6 | **84%** |
+| **B** long call | −14.5 | −75.7 | 23.3 | 67%\* |
+
+\* Put and call rows use the scenarios where the option existed at entry (86 and 88 of 90);
+the paired comparison on the common sample gives the same picture.
+
+**What this says**
+
+1. **A futures hedge removes most of the price risk: ~84% of the variance, ~87% in the fully
+   normal periods.** The worst outcome for a long elevator goes from −59 to −27 USD/t, and to
+   −7 USD/t outside the blend period.
+2. **What remains after a futures hedge is basis risk, and for a long elevator it has been
+   positive on average: +12.8 USD/t.** That is the post-harvest recovery of the basis seen above.
+   It is the elevator's reward for storing grain, *before* storage and financing costs, which
+   this backtest does not include. The short elevator (case B) pays the same amount.
+3. **Options sit in between.** They keep part of the upside, but the premium makes them a
+   costlier and much less complete hedge, especially the put.
+4. **The unhedged averages are not a structural result.** They mainly reflect the price rallies
+   of 2020 and 2025 in a sample of only six seasons.
+
+### "Dólar soja" periods, reported separately
+
+24 scenarios, 2 seasons (2022–2023), in which the holding period overlaps a Programa de
+Incremento Exportador window. **Hedge effectiveness collapses to 0–10%.** The peso pizarra
+embedded the special exchange rate while A3 futures did not, so the physical–futures
+relationship broke. A short elevator hedged with futures (case B) averaged −43 USD/t, with a
+worst case of −203 USD/t. **A futures hedge protects against price risk, but not against
+a regulatory change in the exchange rate.**
+
+Regime windows, verified against the decree texts: PIE I 2022-09-05 → 09-30 (Decree 576/2022),
+PIE II 2022-11-28 → 12-30 (787/2022), PIE III 2023-04-10 → 05-31 (194/2023), PIE IV and
+extensions 2023-09-05 → 12-10 (443, 492, 549, 597/2023). The 80/20 "blend" (Decree 28/2023,
+2023-12-13 → 2025-04-14, repealed by 269/2025) is flagged separately but kept in the main
+sample: the basis stayed normal in 2024.
+
+### Limitations
+
+- **Small sample:** six seasons. The 18 scenarios within a season are highly correlated.
+- **No costs:** commissions, margin financing, premium financing and storage costs are all
+  left out.
+- **Retrospective monthly comparison:** if the last day of a month has no price, the previous
+  day is used, which is only known after the fact.
+- **Only one hedge ratio (1:1) and one strike rule (at the money).**
+
 ## Decisions taken
 
 1. **Hedger profile: elevator (acopiador)** — buys physical soybeans, stores them, sells later.
@@ -75,10 +149,8 @@ Nov, which concentrate almost all volume).
    stopped trading inside or after its delivery month); there is no downloadable official
    calendar.
 
-## Still open
-
-- How to treat the "dólar soja" periods in the backtest (exclude, or report separately).
-- The elevator's storage horizon and which contract it hedges with.
+5. **Two elevator cases** (long and short physical), entries Mar–May, exits Jun–Nov.
+6. **"Dólar soja" periods reported separately** from the main results.
 
 ## Principles
 
