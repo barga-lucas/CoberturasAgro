@@ -91,16 +91,16 @@ the exit settlement premium.
 </picture>
 
 90 scenarios, 6 seasons, USD per tonne. *Risk removed* = share of the unhedged variance that the
-hedge eliminates.
+hedge eliminates. The 95% intervals come from a bootstrap that resamples whole seasons.
 
-| | Mean | Worst | Std. dev. | Risk removed |
-|---|---:|---:|---:|---:|
-| **A** unhedged | +19.6 | −59.0 | 42.0 | — |
-| **A** short futures | +12.8 | −27.4 | 16.6 | **84%** |
-| **A** long put | +13.2 | −40.6 | 31.1 | 31%\* |
-| **B** unhedged | −19.6 | −127.3 | 42.0 | — |
-| **B** long futures | −12.8 | −61.7 | 16.6 | **84%** |
-| **B** long call | −14.5 | −75.7 | 23.3 | 67%\* |
+| | Mean | Worst | Std. dev. | Risk removed | 95% interval |
+|---|---:|---:|---:|---:|---:|
+| **A** unhedged | +19.6 | −59.0 | 42.0 | — | |
+| **A** short futures | +12.8 | −27.4 | 16.6 | **84%** | 74–90% |
+| **A** long put | +13.2 | −40.6 | 31.1 | 31%\* | 18–56% |
+| **B** unhedged | −19.6 | −127.3 | 42.0 | — | |
+| **B** long futures | −12.8 | −61.7 | 16.6 | **84%** | 74–90% |
+| **B** long call | −14.5 | −75.7 | 23.3 | 67%\* | 46–78% |
 
 \* The option rows use the scenarios where the option was already listed at entry (86 and 88
 of 90). Comparing all strategies on exactly the same scenarios gives the same picture.
@@ -116,6 +116,41 @@ of 90). Comparing all strategies on exactly the same scenarios gives the same pi
    expensive and much less complete hedge, especially the put.
 4. **The unhedged averages are not a structural result.** They mostly reflect the price rallies
    of 2020 and 2025 in a sample of only six seasons.
+
+### Robustness (`src/coberturas/analisis/robustez.py`)
+
+**Confidence intervals.** With only six seasons, and 18 highly correlated scenarios within each
+one, a single number like "84%" overstates precision. The intervals in the table above resample
+whole seasons (5,000 draws), so they reflect how much the result depends on which years happened
+to be in the sample. The futures hedge stays clearly effective (74–90%) and clearly beats the put
+(18–56%); against the call (46–78%) the intervals overlap slightly. The average basis gain of the
+long elevator (+12.8 USD/t) has an interval of +7 to +17 USD/t, entirely above zero.
+
+**Is hedging one-for-one the right size?** The standard benchmark in the literature is the
+*minimum-variance hedge ratio* (Ederington, 1979): the number of tonnes of futures per tonne of
+physical that minimises the variance of the hedged position. It is estimated **out of sample**:
+the ratio applied in each season is fitted only on earlier seasons, which had all finished before
+the elevator enters in March.
+
+| Seasons 2021–2026 (72 scenarios) | Risk removed | Worst |
+|---|---:|---:|
+| One-for-one (1:1) | 81% | −27.4 |
+| Minimum-variance ratio, out of sample | 87% | −23.1 |
+
+- **The estimated ratio is about 1.3 and very stable** (1.27–1.41 across seasons). The physical
+  price moved about 45% more than the hedge future (standard deviation 34 vs 24 USD/t). That is
+  expected, because the hedge uses deferred contracts (November, or the next May), and deferred
+  futures are less volatile than the spot price (the "Samuelson effect").
+- **But the improvement is not robust.** The ratio of 1.3 beats one-for-one in 2024–2026 and loses
+  in 2021–2022, and most of the gain comes from 2025. The 95% interval of the improvement goes from
+  −1 to +8 percentage points and includes zero. This matches Wang, Wu and Yang (2015), who find
+  that estimated ratios rarely beat the simple one-for-one hedge reliably out of sample.
+- **Practical reading:** hedging somewhat more than one-for-one when using deferred contracts is
+  reasonable, but the data are not strong enough to recommend a precise ratio.
+
+The intervals keep the estimated ratios fixed, so they do not include the uncertainty of
+re-estimating them. They also measure variance across pooled, overlapping scenarios, not the
+annual results of a real portfolio.
 
 ### Does storing pay? Break-even storage and financing cost
 
@@ -147,6 +182,13 @@ futures prices broke. A short elevator hedged with futures (case B) averaged −
 worst case of −203 USD/t. **A futures hedge protects against price moves, not against a change
 in exchange-rate rules.**
 
+This is an Argentine case of a phenomenon that is well studied in the United States:
+**non-convergence**, when the physical price at the delivery point stops tracking the futures price.
+Adjemian, Garcia, Irwin and Smith (2013) document it in US corn, soybean and wheat markets in
+2005–2010. Goswami, Karali and Adjemian (2023) show that in those periods futures lose much of their
+value as a hedge, whatever hedge ratio is used. The difference here is the cause: it came from an
+exchange-rate regulation, not from storage economics.
+
 | Regime | Dates | Source |
 |---|---|---|
 | PIE I | 2022-09-05 → 2022-09-30 | Decree 576/2022 |
@@ -165,7 +207,8 @@ during 2024.
   out; storage and financing are covered by the break-even above.
 - **Retrospective monthly rule:** if the last market day of a month has no price, the previous
   day is used, which can only be known after the fact.
-- **A single hedge ratio (1:1) and a single strike rule (at the money).**
+- **Hedge ratios: one-for-one in the main results**; the minimum-variance ratio is tested
+  separately. **A single strike rule (at the money).**
 
 ## Methodological choices
 
@@ -176,6 +219,27 @@ during 2024.
 4. **Contract expiry inferred from the data:** a contract counts as expired only if it stopped
    trading within or after its delivery month. There is no downloadable official calendar.
 5. **"Dólar soja" periods reported separately**, with dates taken from the decrees.
+
+## Related work
+
+- **Ederington (1979)**, *The Hedging Performance of the New Futures Markets*, Journal of
+  Finance: the minimum-variance hedge ratio and the "share of variance removed" measure used here.
+- **Wang, Wu and Yang (2015)**, [*Hedging with Futures: Does Anything Beat the Naïve Hedging
+  Strategy?*](https://pubsonline.informs.org/doi/10.1287/mnsc.2014.2028), Management Science: the
+  one-for-one hedge is hard to beat out of sample. This project reaches the same conclusion.
+- **Adjemian, Garcia, Irwin and Smith (2013)**, [*Non-Convergence in Domestic Commodity Futures
+  Markets*](https://ers.usda.gov/sites/default/files/_laserfiche/publications/43777/39376_eib115.pdf),
+  USDA ERS.
+- **Goswami, Karali and Adjemian (2023)**, [*Hedging with futures during nonconvergence in commodity
+  markets*](https://www.sciencedirect.com/science/article/pii/S2405851323000545), Journal of
+  Commodity Markets: the closest analogue to the "dólar soja" finding.
+- **Gorostiaga (2017)**, [*Caracterización de la curva de futuros de soja…: Rosario y
+  Chicago*](https://repositorio.utdt.edu/items/34cd5eeb-a536-49d2-ad23-7830d2afafe4), master's
+  thesis, Universidad Torcuato Di Tella: the Rosario futures curve. It does not cover the basis or
+  hedging.
+
+No public project was found that backtests elevator hedging with A3 Mercados futures and options
+against the Rosario physical price.
 
 ## Sources
 

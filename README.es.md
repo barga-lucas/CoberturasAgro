@@ -93,16 +93,17 @@ del día de entrada, y se venden a la prima de ajuste del día de salida.
 </picture>
 
 90 escenarios, 6 campañas, USD por tonelada. *Riesgo eliminado* = porcentaje de la varianza sin
-cobertura que la cobertura elimina.
+cobertura que la cobertura elimina. Los intervalos del 95% salen de un bootstrap que remuestrea
+campañas enteras.
 
-| | Promedio | Peor caso | Desvío | Riesgo eliminado |
-|---|---:|---:|---:|---:|
-| **A** sin cobertura | +19,6 | −59,0 | 42,0 | — |
-| **A** venta de futuros | +12,8 | −27,4 | 16,6 | **84%** |
-| **A** compra de put | +13,2 | −40,6 | 31,1 | 31%\* |
-| **B** sin cobertura | −19,6 | −127,3 | 42,0 | — |
-| **B** compra de futuros | −12,8 | −61,7 | 16,6 | **84%** |
-| **B** compra de call | −14,5 | −75,7 | 23,3 | 67%\* |
+| | Promedio | Peor caso | Desvío | Riesgo eliminado | Intervalo 95% |
+|---|---:|---:|---:|---:|---:|
+| **A** sin cobertura | +19,6 | −59,0 | 42,0 | — | |
+| **A** venta de futuros | +12,8 | −27,4 | 16,6 | **84%** | 74–90% |
+| **A** compra de put | +13,2 | −40,6 | 31,1 | 31%\* | 18–56% |
+| **B** sin cobertura | −19,6 | −127,3 | 42,0 | — | |
+| **B** compra de futuros | −12,8 | −61,7 | 16,6 | **84%** | 74–90% |
+| **B** compra de call | −14,5 | −75,7 | 23,3 | 67%\* | 46–78% |
 
 \* Las filas de opciones usan los escenarios en los que la opción ya cotizaba al momento de
 entrar (86 y 88 de 90). Si se comparan todas las estrategias sobre exactamente los mismos
@@ -121,6 +122,44 @@ escenarios, el resultado es el mismo.
    el put.
 4. **Los promedios sin cobertura no son un resultado estructural.** Reflejan sobre todo las
    subas de precio de 2020 y 2025 en una muestra de solo seis campañas.
+
+### Robustez (`src/coberturas/analisis/robustez.py`)
+
+**Intervalos de confianza.** Con solo seis campañas, y 18 escenarios muy correlacionados dentro
+de cada una, un número como "84%" aparenta más precisión de la que tiene. Los intervalos de la
+tabla de arriba remuestrean campañas enteras (5.000 veces), así que muestran cuánto depende el
+resultado de qué años tocaron en la muestra. La cobertura con futuros sigue siendo claramente
+efectiva (74–90%) y le gana con claridad al put (18–56%); contra el call (46–78%) los intervalos se
+superponen un poco. La ganancia de base promedio del acopio comprado (+12,8 USD/tn) tiene un
+intervalo de +7 a +17 USD/tn, entero por encima de cero.
+
+**¿Cubrirse 1 a 1 es el tamaño correcto?** La referencia estándar en la literatura es el *ratio
+de cobertura de mínima varianza* (Ederington, 1979): cuántas toneladas de futuros por tonelada
+física minimizan la varianza de la posición cubierta. Se estima **fuera de muestra**: el ratio que
+se aplica en cada campaña se calcula solo con campañas anteriores, que ya habían terminado cuando
+el acopio entra en marzo.
+
+| Campañas 2021–2026 (72 escenarios) | Riesgo eliminado | Peor caso |
+|---|---:|---:|
+| 1 a 1 | 81% | −27,4 |
+| Ratio de mínima varianza, fuera de muestra | 87% | −23,1 |
+
+- **El ratio estimado ronda 1,3 y es muy estable** (entre 1,27 y 1,41 según la campaña). El precio
+  físico se movió alrededor de un 45% más que el futuro de cobertura (desvío de 34 contra
+  24 USD/tn). Es lo esperable, porque la cobertura usa contratos lejanos (noviembre o el mayo
+  siguiente), y los futuros lejanos son menos volátiles que el precio disponible (el "efecto
+  Samuelson").
+- **Pero la mejora no es robusta.** El ratio de 1,3 le gana al 1 a 1 en 2024–2026 y pierde en
+  2021–2022, y la mayor parte de la ganancia viene de 2025. El intervalo del 95% de la mejora va de
+  −1 a +8 puntos porcentuales e incluye el cero. Coincide con Wang, Wu y Yang (2015), que
+  encuentran que los ratios estimados rara vez le ganan de forma confiable al 1 a 1 fuera de
+  muestra.
+- **Lectura práctica:** cubrirse algo más que 1 a 1 cuando se usan contratos lejanos es razonable,
+  pero los datos no alcanzan para recomendar un ratio preciso.
+
+Los intervalos mantienen fijos los ratios estimados, así que no incluyen la incertidumbre de
+volver a estimarlos. Además miden la varianza sobre escenarios superpuestos agrupados, no los
+resultados anuales de una cartera real.
 
 ### ¿Conviene almacenar? Punto de equilibrio del almacenaje y la financiación
 
@@ -153,6 +192,13 @@ así que se rompió la relación entre el precio físico y el futuro. El acopio 
 con futuros (caso B) perdió en promedio 43 USD/tn, con un peor caso de −203 USD/tn. **El futuro
 te cubre de los movimientos de precio, no de un cambio en las reglas cambiarias.**
 
+Es un caso argentino de un fenómeno muy estudiado en Estados Unidos: la **falta de convergencia**,
+cuando el precio físico en el punto de entrega deja de seguir al futuro. Adjemian, Garcia, Irwin y
+Smith (2013) lo documentan en maíz, soja y trigo de EE.UU. entre 2005 y 2010. Goswami, Karali y
+Adjemian (2023) muestran que en esos períodos el futuro pierde buena parte de su valor como
+cobertura, sin importar qué ratio se use. La diferencia es la causa: acá vino de una regulación
+cambiaria, no de la economía del almacenaje.
+
 | Régimen | Fechas | Fuente |
 |---|---|---|
 | PIE I | 05/09/2022 → 30/09/2022 | Decreto 576/2022 |
@@ -173,7 +219,8 @@ El período del blend está marcado, pero queda dentro de la muestra principal p
   equilibrio de arriba.
 - **Regla mensual retrospectiva:** si el último día de mercado del mes no tiene precio, se usa
   el día anterior, algo que solo se puede saber después.
-- **Una sola relación de cobertura (1 a 1) y una sola regla de strike (en el dinero).**
+- **Relación de cobertura: 1 a 1 en los resultados principales**; el ratio de mínima varianza se
+  prueba aparte. **Una sola regla de strike (en el dinero).**
 
 ## Decisiones metodológicas
 
@@ -186,6 +233,27 @@ El período del blend está marcado, pero queda dentro de la muestra principal p
    dejó de cotizar dentro de su mes de entrega o después. No hay un calendario oficial
    descargable.
 5. **Los meses del dólar soja se informan aparte**, con fechas tomadas de los decretos.
+
+## Trabajos relacionados
+
+- **Ederington (1979)**, *The Hedging Performance of the New Futures Markets*, Journal of Finance:
+  el ratio de mínima varianza y la medida de "riesgo eliminado" que usa este proyecto.
+- **Wang, Wu y Yang (2015)**, [*Hedging with Futures: Does Anything Beat the Naïve Hedging
+  Strategy?*](https://pubsonline.informs.org/doi/10.1287/mnsc.2014.2028), Management Science: fuera
+  de muestra es difícil ganarle al 1 a 1. Este proyecto llega a la misma conclusión.
+- **Adjemian, Garcia, Irwin y Smith (2013)**, [*Non-Convergence in Domestic Commodity Futures
+  Markets*](https://ers.usda.gov/sites/default/files/_laserfiche/publications/43777/39376_eib115.pdf),
+  USDA ERS.
+- **Goswami, Karali y Adjemian (2023)**, [*Hedging with futures during nonconvergence in commodity
+  markets*](https://www.sciencedirect.com/science/article/pii/S2405851323000545), Journal of
+  Commodity Markets: el antecedente más cercano al hallazgo del dólar soja.
+- **Gorostiaga (2017)**, [*Caracterización de la curva de futuros de soja…: Rosario y
+  Chicago*](https://repositorio.utdt.edu/items/34cd5eeb-a536-49d2-ad23-7830d2afafe4), tesis de
+  maestría, Universidad Torcuato Di Tella: la curva de futuros de Rosario. No analiza la base ni
+  las coberturas.
+
+No se encontró ningún proyecto público que haga un backtest de coberturas de un acopio con
+futuros y opciones de A3 Mercados contra el precio físico de Rosario.
 
 ## Fuentes
 
