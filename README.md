@@ -2,6 +2,28 @@
 
 *[Versión en español](README.es.md)*
 
+## Summary
+
+Backtest of how a Rosario soybean elevator could have hedged with A3 Mercados futures and options,
+using daily market data from 2020 to 2026 (6 seasons, 90 scenarios in the main sample).
+
+- **Futures removed about 84% of the price risk** (95% interval 74–90%). For an elevator holding
+  grain, the worst case improved from −59 to −27 USD/t.
+- **Options protected much less:** a long put removed about 31% of the variance and a long call
+  about 67%. They keep part of the upside, but the premium is expensive.
+- **Holding hedged grain earned the basis recovery:** +12.8 USD/t on average (interval +7 to +17)
+  before storage and financing costs. That is about 12% a year in dollars, which is the cost level
+  at which storing stops paying.
+- **The hedge failed during the "dólar soja" FX programs (2022–2023):** it removed only 0–10% of
+  the risk, because the physical price included a special exchange rate and the futures price
+  did not.
+- **Hedging about 1.3 tonnes of futures per tonne** looks slightly better out of sample (87% vs
+  81%), but the gain is not statistically robust.
+
+Everything is reproducible from public sources, with no missing values filled in and 104 offline
+tests. The limits (six seasons, no fees or financing costs) are stated
+next to each result.
+
 ## The question
 
 A grain elevator (*acopiador*) near Rosario, Argentina, buys soybeans from farmers, stores them

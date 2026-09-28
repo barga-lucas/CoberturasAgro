@@ -2,6 +2,27 @@
 
 *[English version](README.md)*
 
+## Resumen
+
+Backtest de cómo podría haberse cubierto un acopio de soja de Rosario con futuros y opciones de
+A3 Mercados, con datos diarios de mercado de 2020 a 2026 (6 campañas, 90 escenarios en la
+muestra principal).
+
+- **Los futuros eliminaron alrededor del 84% del riesgo de precio** (intervalo del 95%: 74–90%).
+  Para un acopio con mercadería en stock, el peor resultado pasó de −59 a −27 USD/tn.
+- **Las opciones protegieron mucho menos:** comprar un put eliminó alrededor del 31% de la
+  varianza y comprar un call, alrededor del 67%. Conservan parte de la suba, pero la prima es cara.
+- **Guardar mercadería cubierta capturó la recuperación de la base:** +12,8 USD/tn en promedio
+  (intervalo de +7 a +17), antes de costos de almacenaje y financiación. Equivale a cerca de un
+  12% anual en dólares: el nivel de costo a partir del cual guardar deja de convenir.
+- **La cobertura falló durante el dólar soja (2022–2023):** eliminó apenas entre 0 y 10% del
+  riesgo, porque el precio físico incluía un tipo de cambio especial y el futuro no.
+- **Cubrir alrededor de 1,3 toneladas de futuros por tonelada** da un poco mejor fuera de muestra
+  (87% contra 81%), pero la mejora no es estadísticamente robusta.
+
+Todo se reproduce con fuentes públicas, sin rellenar datos faltantes y con 104 tests que corren
+sin conexión. Los límites (seis campañas, sin comisiones ni costo financiero) están aclarados junto a cada resultado.
+
 ## La pregunta
 
 Un acopio de la zona de Rosario le compra soja a los productores, la guarda y la vende más
