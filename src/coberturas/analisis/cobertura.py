@@ -222,7 +222,13 @@ ESTRATEGIAS = {
 }
 
 
-def resumen(esc: pd.DataFrame, caso: str, regimenes: set[str], muestra: str = "comun") -> pd.DataFrame:
+def resumen(
+    esc: pd.DataFrame,
+    caso: str,
+    regimenes: set[str],
+    muestra: str = "comun",
+    estrategias: dict[str, tuple[str, ...]] = ESTRATEGIAS,
+) -> pd.DataFrame:
     """Estadísticos por estrategia para los regímenes pedidos (obligatorio: no se mezclan por defecto).
 
     `muestra="comun"`: solo escenarios donde las tres estrategias existen, para
@@ -231,13 +237,15 @@ def resumen(esc: pd.DataFrame, caso: str, regimenes: set[str], muestra: str = "c
     recorta los resultados de futuros y sin cobertura.
     `efectividad` = 1 - varianza con cobertura / varianza sin cobertura, ambas
     sobre los escenarios de esa estrategia.
+    `estrategias`: por ejemplo `collar.ESTRATEGIAS_OTM`; la primera columna de
+    cada caso tiene que ser la sin cobertura.
     """
     if muestra not in ("comun", "completa"):
         raise ValueError("muestra debe ser 'comun' o 'completa'")
     desconocidos = set(regimenes) - {"normal", "blend", "dolar_soja"}
     if desconocidos:
         raise ValueError(f"Regímenes desconocidos: {sorted(desconocidos)}")
-    columnas = list(ESTRATEGIAS[caso])
+    columnas = list(estrategias[caso])
     base_ok = esc[(esc["disponible"] == True) & esc["regimen"].isin(regimenes)]  # noqa: E712
     if base_ok.empty:
         raise CoberturaError("No hay escenarios disponibles para esos regímenes.")

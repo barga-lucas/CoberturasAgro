@@ -10,7 +10,9 @@ using daily market data from 2020 to 2026 (6 seasons, 90 scenarios in the main s
 - **Futures removed about 84% of the price risk** (95% interval 74–90%). For an elevator holding
   grain, the worst case improved from −59 to −27 USD/t.
 - **Options protected much less:** a long put removed about 31% of the variance and a long call
-  about 67%. They keep part of the upside, but the premium is expensive.
+  about 67%. They keep part of the upside, but the premium is expensive. A collar (buy a put
+  5% below the futures price and sell a call 5% above) removed 69% at almost no cost, still
+  below futures.
 - **Holding hedged grain earned the basis recovery:** +12.8 USD/t on average (interval +7 to +17)
   before storage and financing costs. That is about 12% a year in dollars, which is the cost level
   at which storing stops paying.
@@ -20,29 +22,65 @@ using daily market data from 2020 to 2026 (6 seasons, 90 scenarios in the main s
 - **Hedging about 1.3 tonnes of futures per tonne** looks slightly better out of sample (87% vs
   81%), but the gain is not statistically robust.
 
-Everything is reproducible from public sources, with no missing values filled in and 104 offline
-tests. The limits (six seasons, no fees or financing costs) are stated
+Everything is reproducible from public sources, with no missing values filled in and 141 offline
+tests. The limits (six seasons, option premiums that are mostly settlement valuations rather than
+trades, no fees or financing costs) are stated
 next to each result.
 
 ## The question
 
-A grain elevator (*acopiador*) near Rosario, Argentina, buys soybeans from farmers, stores them
-and sells them later. The physical price it deals at is the **Cámara Arbitral de Rosario
-"pizarra" price**, which moves with world soybean prices and, in Argentina, also with the
-exchange rate, export taxes (*retenciones*) and special FX programs.
+### The elevator's problem
 
-**How much of that price risk could the elevator have removed with futures and options on
-A3 Mercados (formerly Matba-Rofex), and which strategy gave the best trade-off between
-protection and cost over 2020–2026?**
+A grain elevator (*acopio*) near Rosario, Argentina, buys soybeans from farmers at harvest
+(March to May), stores them in its silos and sells them months later. Between buying and
+selling it holds grain whose price can fall. That is its **price risk**.
 
-It comes down to three questions:
+It trades at the **Cámara Arbitral de Rosario "pizarra" price**, the reference price for
+soybeans delivered in Rosario. It moves with world soybean prices and, in Argentina, also with
+the exchange rate, export taxes (*retenciones*) and special FX programs.
 
-1. **Basis:** how does the gap between the Rosario physical price and the futures price behave?
-   Basis risk is the part a futures hedge cannot remove.
-2. **Backtest:** what would each hedging strategy (no hedge, futures, options) have returned
-   in each season?
-3. **Risk, not just average return:** worst case, dispersion, and the cost of the option
-   premium.
+**Example.** In April the elevator buys 1,000 tonnes at 300 USD/t and plans to sell them in
+September. If by September the pizarra price has fallen to 260 USD/t, it loses 40 USD/t:
+40,000 dollars.
+
+### How it can hedge
+
+A3 Mercados (formerly Matba-Rofex) lists soybean futures and options for delivery in Rosario.
+
+- **Futures:** in April the elevator *sells* a soybean future at, say, 305 USD/t. If by
+  September the price has fallen and the future is at 265, it buys the future back and gains
+  40 USD/t, which offsets the loss on the stored grain. If the price rises, the opposite
+  happens: it gains on the grain and loses on the future. Either way, the result is almost
+  locked in.
+- **Put option:** works like insurance. The elevator pays a premium and, if the price falls,
+  the option offsets the drop. If the price rises, it loses only the premium and keeps the gain.
+- **Collar:** buy a put and pay for it by selling a call option. The elevator is protected
+  against large drops but gives up large rises.
+
+No hedge is perfect. The future tracks the soybean price, but it is not exactly that day's
+Rosario pizarra price. The gap between the two is called the **basis**, and how much the basis
+moves between buying and selling is a risk the hedge cannot remove.
+
+There is also an elevator in the opposite position. It received grain *a fijar* ("price to be
+fixed": the farmer chooses later on which day the price is set) and, to free up space, has
+already sold it at a fixed price. If the price **rises** before the farmer fixes, it has to pay
+more than it received. That elevator hedges by buying futures or calls. The project covers both
+cases.
+
+### What it answers
+
+**Had an elevator hedged between 2020 and 2026, how much risk would each strategy have
+removed, what would it have cost, and when would it have failed?**
+
+The answer comes from simulating, with real daily prices, what would have happened in each
+season:
+
+1. **Basis:** how far and when the Rosario price drifts from the future. That sets the limit
+   of what a hedge can achieve.
+2. **Backtest:** the result of each strategy (no hedge, futures, options, collar) over 90
+   combinations of buying date and selling date.
+3. **Risk, not just the average:** the worst result, how much results vary and how much the
+   option premium costs.
 
 ## Data
 
@@ -109,7 +147,7 @@ the exit settlement premium.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/img/estrategias_dark.png">
-  <img alt="Range of hedging results per strategy for cases A and B: futures hedges have the narrowest range and remove 84% of the risk; put 31%, call 67%" src="docs/img/estrategias_light.png">
+  <img alt="Range of hedging results per strategy for cases A and B: futures hedges have the narrowest range and remove 84% of the risk; collars 69%; put 31%, call 67%; out-of-the-money options less" src="docs/img/estrategias_light.png">
 </picture>
 
 90 scenarios, 6 seasons, USD per tonne. *Risk removed* = share of the unhedged variance that the
@@ -120,11 +158,15 @@ hedge eliminates. The 95% intervals come from a bootstrap that resamples whole s
 | **A** unhedged | +19.6 | −59.0 | 42.0 | — | |
 | **A** short futures | +12.8 | −27.4 | 16.6 | **84%** | 74–90% |
 | **A** long put | +13.2 | −40.6 | 31.1 | 31%\* | 18–56% |
+| **A** long put, 5% out of the money | +13.5 | −45.8 | 33.6 | 20%\* | 10–38% |
+| **A** collar (±5%) | +12.1 | −36.4 | 21.0 | 69%\* | 54–82% |
 | **B** unhedged | −19.6 | −127.3 | 42.0 | — | |
 | **B** long futures | −12.8 | −61.7 | 16.6 | **84%** | 74–90% |
 | **B** long call | −14.5 | −75.7 | 23.3 | 67%\* | 46–78% |
+| **B** long call, 5% out of the money | −15.0 | −75.7 | 25.9 | 58%\* | 28–74% |
+| **B** reverse collar (±5%) | −12.1 | −66.6 | 21.0 | 69%\* | 54–82% |
 
-\* The option rows use the scenarios where the option was already listed at entry (86 and 88
+\* The option rows use the scenarios where the option was already listed at entry (86 to 88
 of 90). Comparing all strategies on exactly the same scenarios gives the same picture.
 
 **What it shows**
@@ -138,6 +180,66 @@ of 90). Comparing all strategies on exactly the same scenarios gives the same pi
    expensive and much less complete hedge, especially the put.
 4. **The unhedged averages are not a structural result.** They mostly reflect the price rallies
    of 2020 and 2025 in a sample of only six seasons.
+
+### Out-of-the-money options and collars (`src/coberturas/analisis/collar.py`)
+
+Same scenarios, contract and premium rule as above. The **5% out-of-the-money put** has the
+listed strike closest to 95% of the entry futures price; the **5% out-of-the-money call**, the
+one closest to 105%. If the closest listed strike is more than 2 percentage points away from
+that target, the leg is marked unavailable instead of silently using another strike. The
+**collar** of case A buys that put and sells that call; the **reverse collar** of case B buys the
+call and sells the put.
+
+- **The collar removed 69% of the risk, far more than a put alone (31% at the money, 20% out of
+  the money), and cost almost nothing:** the call sold was worth slightly more than the put
+  bought, so the elevator received about 1 USD/t at entry (median). Its average result
+  (+12.1 USD/t) is close to the futures hedge (+12.8).
+- **Futures are still the better protection.** Their worst case is −27 USD/t against −36 for
+  the collar and −46 for the out-of-the-money put. The collar only makes sense for an elevator
+  willing to bear price moves of up to 5% in either direction.
+- **Variance counts gains as risk.** A put is meant to keep the upside, and that upside
+  increases variance, so "risk removed" understates what a put is for. The worst case is the
+  fairer comparison for options, and it points the same way.
+- **The band width matters in a consistent way.** The wider the band, the less protection:
+
+| Strike distance | Scenarios | A: put out of the money | A: collar | B: call out of the money | B: reverse collar |
+|---|---:|---:|---:|---:|---:|
+| 3% | 76 | 25% | 77% | 62% | 77% |
+| 5% | 86 | 20% | 69% | 55% | 69% |
+| 10% | 78 | 10% | 55% | 46% | 55% |
+
+  Each row compares all strategies on the same scenarios, which is why the 5% row can differ
+  slightly from the main table. The number of scenarios changes because a strike close enough
+  to each target is not always listed.
+
+**Liquidity caveat.** A3 publishes a settlement premium for every listed strike, even on days
+without trades. On the entry day, the 5% out-of-the-money put had trades in only 6 of 28
+positions and the call in 12 of 29 (on the exit day: 9 of 60 and 23 of 69), although all of
+them had open interest. **Most of these premiums are the exchange's valuation, not prices at
+which someone actually traded**, so the option and collar results are less reliable than the
+futures results. Selling the call also requires margin, whose financing cost is not included.
+In the "dólar soja" periods collars failed like every other hedge (about 9% of the risk
+removed).
+
+**Synthetic put.** A Bolsa de Comercio de Rosario course on hedging strategies (Cavarozzi, 2026)
+recommends the *synthetic put* (sell a future and buy a call at the same strike) when calls are
+more liquid than puts, which is common on the local market. The data agree on liquidity: the
+out-of-the-money calls above traded about twice as often as the puts. Two checks on whether
+the choice changes the hedge:
+
+- **Put-call parity holds in A3 settlement premiums on any given day:** across about 15,000
+  call/put pairs with strikes within 5% of the future (2020–2026), C − P − (F − K) has a median
+  of 0.0 USD/t, and 90% of the pairs are within ±2 USD/t.
+- **Over the actual holding periods the two hedges end up close, but not identical.** In the 64
+  main-sample scenarios where a call with the put's strike was listed on both dates, the
+  synthetic put differed from the put by a median of 1.0 USD/t (90% of scenarios within
+  3.7 USD/t, at most 5.5). The difference is the change in the parity gap between entry and
+  exit. Protection is about the same: 41% of the risk removed against 38% for the put on those
+  same scenarios, with similar worst cases (−40.6 and −40.1 USD/t). In the other 22 scenarios there was no
+  call listed at the put's strike on the entry day.
+
+In this sample the choice between a put and a synthetic put comes down to liquidity and fees
+rather than protection.
 
 ### Robustness (`src/coberturas/analisis/robustez.py`)
 
@@ -269,6 +371,8 @@ against the Rosario physical price.
   [BCRA statistics API](https://api.bcra.gob.ar/estadisticas/v4.0/Monetarias/5),
   A3 Mercados public API used by [cem.matbarofex.com.ar](https://cem.matbarofex.com.ar/),
   [Yahoo Finance ZS=F](https://finance.yahoo.com/quote/ZS=F).
+- Hedging strategies and synthetic options: Cavarozzi, F., *Estrategias de cobertura con futuros y
+  opciones agrícolas* (2026), Bolsa de Comercio de Rosario course slides (not publicly available).
 - How elevators operate: Landrein, [*Acopios*](https://www.bcr.com.ar/sites/default/files/2018-10/acopio.pdf),
   and Rosa, [*Acopios: ¿mayor giro o mayor almacenamiento?*](https://www.capacitacion.bcr.com.ar/Documentos/EdicionesBCR/5/acopio_rossa.pdf)
   (2001), Bolsa de Comercio de Rosario training material.
@@ -287,6 +391,7 @@ python -m venv .venv
 .venv/Scripts/python -m pip install -r requirements.txt   # Windows venv
 .venv/Scripts/python -m pytest -q                         # offline tests
 .venv/Scripts/python scripts/graficos.py                  # downloads the data and redraws the charts
+.venv/Scripts/python scripts/resultados_collar.py         # prints the collar tables
 ```
 
 Raw downloads are cached in `data/raw/`, which is not versioned.

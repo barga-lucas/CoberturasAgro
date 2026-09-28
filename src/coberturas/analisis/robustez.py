@@ -129,14 +129,17 @@ def intervalos_bootstrap(
     n: int = 5000,
     semilla: int = 0,
     nivel: float = 0.95,
+    estrategias: dict[str, tuple[str, ...]] = ESTRATEGIAS,
 ) -> pd.DataFrame:
     """Intervalos para media y efectividad de cada estrategia, remuestreando campañas.
 
     Cada estrategia usa sus escenarios disponibles (igual que
     `resumen(..., muestra="completa")`), y su efectividad se calcula contra el
     resultado sin cobertura de esos mismos escenarios en cada remuestreo.
+    `estrategias`: por ejemplo `collar.ESTRATEGIAS_OTM`; la primera columna de
+    cada caso tiene que ser la sin cobertura.
     """
-    columnas = list(ESTRATEGIAS[caso])
+    columnas = list(estrategias[caso])
     sub = _disponibles(esc, regimenes)
     campanias = np.array(sorted(sub["campania"].unique()))
     if len(campanias) < 2:

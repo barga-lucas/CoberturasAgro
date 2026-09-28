@@ -19,13 +19,13 @@ import pandas as pd  # noqa: E402
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "src"))
 
-from coberturas.analisis import base, cobertura as cob  # noqa: E402
+from coberturas.analisis import base, collar, cobertura as cob  # noqa: E402
 from coberturas.data import a3, fx, pizarra  # noqa: E402
 
 SALIDA = RAIZ / "docs" / "img"
 CACHE = RAIZ / "data" / "raw"
 
-# Paleta de referencia validada (dataviz): slots 1-2 categóricos + tinta y superficie.
+# Paleta de referencia validada (dataviz): slots 1-4 categóricos + tinta y superficie.
 TEMAS = {
     "light": {
         "superficie": "#fcfcfb",
@@ -37,6 +37,8 @@ TEMAS = {
         "banda": "#f0efec",
         "serie1": "#2a78d6",
         "serie2": "#eb6834",
+        "serie3": "#1baf7a",
+        "serie4": "#eda100",
         "neutra": "#898781",
     },
     "dark": {
@@ -49,6 +51,8 @@ TEMAS = {
         "banda": "#383835",
         "serie1": "#3987e5",
         "serie2": "#d95926",
+        "serie3": "#199e70",
+        "serie4": "#c98500",
         "neutra": "#898781",
     },
 }
@@ -119,16 +123,22 @@ def grafico_estrategias(esc: pd.DataFrame, modo: str):
     filas = [
         ("A", "A_sin_cobertura", "Unhedged", t["neutra"]),
         ("A", "A_futuro", "Short futures", t["serie1"]),
-        ("A", "A_put", "Long put", t["serie2"]),
+        ("A", "A_put", "Long put (at the money)", t["serie2"]),
+        ("A", "A_put_otm", "Long put (5% out)", t["serie4"]),
+        ("A", "A_collar", "Collar (±5%)", t["serie3"]),
         ("B", "B_sin_cobertura", "Unhedged", t["neutra"]),
         ("B", "B_futuro", "Long futures", t["serie1"]),
-        ("B", "B_call", "Long call", t["serie2"]),
+        ("B", "B_call", "Long call (at the money)", t["serie2"]),
+        ("B", "B_call_otm", "Long call (5% out)", t["serie4"]),
+        ("B", "B_collar", "Reverse collar (±5%)", t["serie3"]),
     ]
-    resumenes = {c: cob.resumen(esc, c, regimenes, "completa").set_index("estrategia") for c in "AB"}
+    resumenes = {
+        c: cob.resumen(esc, c, regimenes, "completa", collar.ESTRATEGIAS_OTM).set_index("estrategia") for c in "AB"
+    }
     datos = esc[(esc["disponible"] == True) & esc["regimen"].isin(regimenes)]  # noqa: E712
 
     plt.rcParams["font.family"] = FUENTE
-    fig, ejes = plt.subplots(1, 2, figsize=(10, 3.1), dpi=150, sharex=True)
+    fig, ejes = plt.subplots(2, 1, figsize=(10, 6.2), dpi=150, sharex=True)
     fig.patch.set_facecolor(t["superficie"])
     titulos = {"A": "Case A — long physical (stock)", "B": "Case B — short physical (sold ahead)"}
     for ax, caso in zip(ejes, "AB"):
@@ -150,17 +160,18 @@ def grafico_estrategias(esc: pd.DataFrame, modo: str):
         ax.set_yticks(range(len(propias)))
         ax.set_yticklabels([f[2] for f in reversed(propias)], color=t["tinta"], fontsize=9.5)
         ax.set_title(titulos[caso], color=t["tinta"], fontsize=10.5, loc="left", fontweight="bold")
-        ax.set_xlabel("Result, USD per tonne", color=t["secundaria"], fontsize=9)
+        if caso == "B":
+            ax.set_xlabel("Result, USD per tonne", color=t["secundaria"], fontsize=9)
         ax.set_xlim(-140, 190)
     fig.suptitle(
         "Hedging results per scenario, 2020–2026 (excluding “dólar soja” periods)",
         color=t["tinta"], fontsize=12, x=0.01, ha="left", fontweight="bold",
     )
     fig.text(
-        0.01, 0.855, "Thin line = worst to best · thick bar = middle 50% · dot = median. Entry Mar–May, exit Jun–Nov.",
+        0.01, 0.93, "Thin line = worst to best · thick bar = middle 50% · dot = median. Entry Mar–May, exit Jun–Nov.",
         color=t["secundaria"], fontsize=9, ha="left",
     )
-    fig.tight_layout(rect=(0, 0, 1, 0.84))
+    fig.tight_layout(rect=(0, 0, 1, 0.92))
     fig.savefig(SALIDA / f"estrategias_{modo}.png", facecolor=t["superficie"])
     plt.close(fig)
 
@@ -169,7 +180,7 @@ def main():
     SALIDA.mkdir(parents=True, exist_ok=True)
     fisico, fut, opc = cargar()
     serie = base.serie_base(fisico, base.contratos_rosario(fut))
-    esc = cob.escenarios(fisico, fut, opc, range(2020, 2027))
+    esc = collar.agregar_otm(cob.escenarios(fisico, fut, opc, range(2020, 2027)), opc)
     for modo in TEMAS:
         grafico_base(serie, modo)
         grafico_estrategias(esc, modo)

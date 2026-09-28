@@ -12,6 +12,8 @@ muestra principal).
   Para un acopio con mercadería en stock, el peor resultado pasó de −59 a −27 USD/tn.
 - **Las opciones protegieron mucho menos:** comprar un put eliminó alrededor del 31% de la
   varianza y comprar un call, alrededor del 67%. Conservan parte de la suba, pero la prima es cara.
+  Un collar (comprar un put 5% por debajo del futuro y vender un call 5% por encima) eliminó el
+  69% casi sin costo, todavía por debajo de los futuros.
 - **Guardar mercadería cubierta capturó la recuperación de la base:** +12,8 USD/tn en promedio
   (intervalo de +7 a +17), antes de costos de almacenaje y financiación. Equivale a cerca de un
   12% anual en dólares: el nivel de costo a partir del cual guardar deja de convenir.
@@ -20,28 +22,62 @@ muestra principal).
 - **Cubrir alrededor de 1,3 toneladas de futuros por tonelada** da un poco mejor fuera de muestra
   (87% contra 81%), pero la mejora no es estadísticamente robusta.
 
-Todo se reproduce con fuentes públicas, sin rellenar datos faltantes y con 104 tests que corren
-sin conexión. Los límites (seis campañas, sin comisiones ni costo financiero) están aclarados junto a cada resultado.
+Todo se reproduce con fuentes públicas, sin rellenar datos faltantes y con 141 tests que corren
+sin conexión. Los límites (seis campañas, primas de opciones que en su mayoría son valuaciones de
+ajuste y no operaciones, sin comisiones ni costo financiero) están aclarados junto a cada resultado.
 
 ## La pregunta
 
-Un acopio de la zona de Rosario le compra soja a los productores, la guarda y la vende más
-adelante. El precio físico con el que opera es el **precio pizarra de la Cámara Arbitral de
-Rosario**, que se mueve con el precio internacional de la soja y, en Argentina, también con el
-tipo de cambio, las retenciones y los programas cambiarios especiales.
+### El problema del acopio
 
-**¿Cuánto de ese riesgo de precio podría haber eliminado el acopio con futuros y opciones de
-A3 Mercados (ex Matba-Rofex), y qué estrategia ofreció el mejor equilibrio entre protección y
-costo entre 2020 y 2026?**
+Un acopio de la zona de Rosario le compra soja a los productores en la cosecha (marzo a mayo),
+la guarda en sus silos y la vende meses después. Entre la compra y la venta tiene mercadería
+cuyo precio puede bajar. Ese es su **riesgo de precio**.
 
-Se responde con tres preguntas:
+El precio con el que opera es el **precio pizarra de la Cámara Arbitral de Rosario**, el precio de
+referencia de la soja disponible en Rosario. Se mueve con el precio internacional de la soja y,
+en Argentina, también con el tipo de cambio, las retenciones y los programas cambiarios
+especiales.
 
-1. **Base:** ¿cómo se comporta la diferencia entre el precio físico de Rosario y el precio del
-   futuro? El riesgo de base es lo que una cobertura con futuros no puede eliminar.
-2. **Backtest:** ¿qué resultado habría dado cada estrategia (sin cobertura, futuros, opciones)
-   en cada campaña?
-3. **Riesgo, no solo rendimiento promedio:** peor caso, dispersión y costo de la prima de las
-   opciones.
+**Ejemplo.** En abril el acopio compra 1.000 toneladas a 300 USD/tn y piensa venderlas en
+septiembre. Si para septiembre la pizarra bajó a 260 USD/tn, pierde 40 USD/tn: 40.000 dólares.
+
+### Cómo se puede cubrir
+
+En A3 Mercados (ex Matba-Rofex) se negocian futuros y opciones sobre soja con entrega en Rosario.
+
+- **Futuro:** en abril, el acopio *vende* un futuro de soja a, por ejemplo, 305 USD/tn. Si en
+  septiembre el precio cayó y el futuro vale 265, recompra el futuro y gana 40 USD/tn. Esa
+  ganancia compensa lo que perdió con la soja guardada. Si el precio sube, pasa lo contrario:
+  gana con la soja y pierde con el futuro. En los dos casos el resultado queda casi fijo.
+- **Opción de venta (put):** funciona como un seguro. El acopio paga una prima y, si el precio
+  baja, la opción compensa la caída. Si el precio sube, no pierde nada con la opción (solo la
+  prima) y se queda con la suba.
+- **Collar:** compra un put y, para pagarlo, vende una opción de compra (call). Queda protegido
+  contra bajas fuertes, pero renuncia a las subas fuertes.
+
+La cobertura nunca es perfecta. El futuro sigue al precio de la soja, pero no es exactamente la
+pizarra de Rosario del día. La diferencia entre los dos se llama **base**, y lo que la base se
+mueve entre la compra y la venta es un riesgo que la cobertura no elimina.
+
+También existe el acopio en la situación inversa. Recibió soja "a fijar" (el productor decide
+más adelante en qué día fija el precio) y, para liberar espacio, ya la vendió a precio fijo. Si
+el precio **sube** antes de que el productor fije, tiene que pagarle más de lo que cobró. Ese
+acopio se cubre comprando futuros o calls. El proyecto analiza los dos casos.
+
+### Qué se busca responder
+
+**Si un acopio se hubiera cubierto entre 2020 y 2026, ¿cuánto riesgo le habría sacado cada
+estrategia, cuánto le habría costado y en qué situaciones no le habría servido?**
+
+Para responderlo se simula, con precios reales de cada día, qué habría pasado en cada campaña:
+
+1. **Base:** cuánto se separa el precio de Rosario del futuro y cuándo. Eso marca el límite de
+   lo que una cobertura puede lograr.
+2. **Backtest:** el resultado de cada estrategia (sin cobertura, futuros, opciones, collar) en
+   90 combinaciones de fecha de compra y fecha de venta.
+3. **Riesgo, no solo promedio:** el peor resultado, cuánto varían los resultados y cuánto
+   cuesta la prima de las opciones.
 
 ## Datos
 
@@ -110,7 +146,7 @@ del día de entrada, y se venden a la prima de ajuste del día de salida.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/img/estrategias_dark.png">
-  <img alt="Rango de resultados por estrategia en los casos A y B: el futuro tiene el rango más acotado y elimina el 84% del riesgo; el put el 31% y el call el 67%" src="docs/img/estrategias_light.png">
+  <img alt="Rango de resultados por estrategia en los casos A y B: el futuro tiene el rango más acotado y elimina el 84% del riesgo; los collars el 69%; el put el 31% y el call el 67%; las opciones fuera del dinero, menos" src="docs/img/estrategias_light.png">
 </picture>
 
 90 escenarios, 6 campañas, USD por tonelada. *Riesgo eliminado* = porcentaje de la varianza sin
@@ -122,12 +158,16 @@ campañas enteras.
 | **A** sin cobertura | +19,6 | −59,0 | 42,0 | — | |
 | **A** venta de futuros | +12,8 | −27,4 | 16,6 | **84%** | 74–90% |
 | **A** compra de put | +13,2 | −40,6 | 31,1 | 31%\* | 18–56% |
+| **A** compra de put 5% fuera del dinero | +13,5 | −45,8 | 33,6 | 20%\* | 10–38% |
+| **A** collar (±5%) | +12,1 | −36,4 | 21,0 | 69%\* | 54–82% |
 | **B** sin cobertura | −19,6 | −127,3 | 42,0 | — | |
 | **B** compra de futuros | −12,8 | −61,7 | 16,6 | **84%** | 74–90% |
 | **B** compra de call | −14,5 | −75,7 | 23,3 | 67%\* | 46–78% |
+| **B** compra de call 5% fuera del dinero | −15,0 | −75,7 | 25,9 | 58%\* | 28–74% |
+| **B** collar inverso (±5%) | −12,1 | −66,6 | 21,0 | 69%\* | 54–82% |
 
 \* Las filas de opciones usan los escenarios en los que la opción ya cotizaba al momento de
-entrar (86 y 88 de 90). Si se comparan todas las estrategias sobre exactamente los mismos
+entrar (entre 86 y 88 de 90). Si se comparan todas las estrategias sobre exactamente los mismos
 escenarios, el resultado es el mismo.
 
 **Qué muestra**
@@ -143,6 +183,66 @@ escenarios, el resultado es el mismo.
    el put.
 4. **Los promedios sin cobertura no son un resultado estructural.** Reflejan sobre todo las
    subas de precio de 2020 y 2025 en una muestra de solo seis campañas.
+
+### Opciones fuera del dinero y collar (`src/coberturas/analisis/collar.py`)
+
+Mismos escenarios, mismo contrato y misma regla de primas que arriba. El **put 5% fuera del
+dinero** es el de strike listado más cercano al 95% del futuro del día de entrada; el **call 5%
+fuera del dinero**, el más cercano al 105%. Si el strike más cercano se aleja más de 2 puntos
+porcentuales de ese objetivo, la pata queda como no disponible, en lugar de usar otro strike sin
+avisar. El **collar** del caso A compra ese put y vende ese call; el **collar inverso** del caso B
+compra el call y vende el put.
+
+- **El collar eliminó el 69% del riesgo, mucho más que un put solo (31% en el dinero, 20% fuera
+  del dinero), y casi no costó nada:** el call vendido valía un poco más que el put comprado, así
+  que el acopio cobró alrededor de 1 USD/tn al entrar (mediana). Su resultado promedio
+  (+12,1 USD/tn) es parecido al de la cobertura con futuros (+12,8).
+- **El futuro sigue protegiendo mejor.** Su peor caso es −27 USD/tn, contra −36 del collar y −46
+  del put fuera del dinero. El collar solo tiene sentido para un acopio dispuesto a asumir
+  movimientos de precio de hasta 5% para cualquier lado.
+- **La varianza cuenta las ganancias como riesgo.** Un put sirve justamente para quedarse con la
+  suba, y esa suba aumenta la varianza, así que el "riesgo eliminado" subestima para qué sirve un
+  put. Para comparar opciones es más justo mirar el peor caso, y la conclusión es la misma.
+- **El ancho de la banda importa de forma coherente.** Cuanto más ancha, menos protección:
+
+| Distancia del strike | Escenarios | A: put fuera del dinero | A: collar | B: call fuera del dinero | B: collar inverso |
+|---|---:|---:|---:|---:|---:|
+| 3% | 76 | 25% | 77% | 62% | 77% |
+| 5% | 86 | 20% | 69% | 55% | 69% |
+| 10% | 78 | 10% | 55% | 46% | 55% |
+
+  Cada fila compara todas las estrategias sobre los mismos escenarios; por eso la fila del 5%
+  puede diferir un poco de la tabla principal. La cantidad de escenarios cambia porque no
+  siempre hay un strike listado lo bastante cerca de cada objetivo.
+
+**Advertencia sobre la liquidez.** A3 publica una prima de ajuste para cada strike listado,
+aunque ese día no se haya operado. El día de entrada, el put 5% fuera del dinero tuvo operaciones
+en solo 6 de 28 posiciones y el call en 12 de 29 (el día de salida: 9 de 60 y 23 de 69), aunque
+todas tenían interés abierto. **La mayoría de estas primas son la valuación del mercado, no
+precios a los que alguien efectivamente operó**, así que los resultados con opciones y collar son
+menos confiables que los de futuros. Además, vender el call exige margen, cuyo costo financiero no
+se incluye. En los meses del dólar soja el collar falló como todas las coberturas (eliminó
+alrededor del 9% del riesgo).
+
+**Put sintético.** Un curso de la Bolsa de Comercio de Rosario sobre estrategias de cobertura
+(Cavarozzi, 2026) recomienda el *put sintético* (vender un futuro y comprar un call del mismo
+strike) cuando los calls tienen más liquidez que los puts, algo habitual en el mercado local.
+Los datos coinciden en la liquidez: los calls fuera del dinero de arriba se operaron alrededor
+del doble de veces que los puts. Para ver si la elección cambia la cobertura hay dos controles:
+
+- **La paridad put-call se cumple en las primas de ajuste de A3 en cada día:** en unos 15.000
+  pares call/put con strikes a menos del 5% del futuro (2020–2026), C − P − (F − K) tiene una
+  mediana de 0,0 USD/tn y el 90% de los pares queda dentro de ±2 USD/tn.
+- **En los períodos reales de cobertura, las dos terminan cerca pero no son idénticas.** En los
+  64 escenarios de la muestra principal en los que había un call del strike del put en las dos
+  fechas, el put sintético se diferenció del put en 1,0 USD/tn de mediana (el 90% de los
+  escenarios dentro de 3,7 USD/tn, como máximo 5,5). La diferencia es el cambio del desvío de
+  paridad entre la entrada y la salida. La protección es casi la misma: 41% del riesgo eliminado
+  contra 38% del put en esos mismos escenarios, con peores casos parecidos (−40,6 y −40,1 USD/tn). En los otros
+  22 escenarios no había un call listado con el strike del put el día de entrada.
+
+En esta muestra, elegir entre un put y un put sintético depende de la liquidez y las comisiones,
+no de la protección.
 
 ### Robustez (`src/coberturas/analisis/robustez.py`)
 
@@ -282,6 +382,9 @@ futuros y opciones de A3 Mercados contra el precio físico de Rosario.
   [API de estadísticas del BCRA](https://api.bcra.gob.ar/estadisticas/v4.0/Monetarias/5),
   API pública de A3 Mercados que usa [cem.matbarofex.com.ar](https://cem.matbarofex.com.ar/),
   [Yahoo Finance ZS=F](https://finance.yahoo.com/quote/ZS=F).
+- Estrategias de cobertura y opciones sintéticas: Cavarozzi, F., *Estrategias de cobertura con
+  futuros y opciones agrícolas* (2026), diapositivas de un curso de la Bolsa de Comercio de Rosario
+  (no están publicadas).
 - Cómo opera un acopio: Landrein, [*Acopios*](https://www.bcr.com.ar/sites/default/files/2018-10/acopio.pdf),
   y Rosa, [*Acopios: ¿mayor giro o mayor almacenamiento?*](https://www.capacitacion.bcr.com.ar/Documentos/EdicionesBCR/5/acopio_rossa.pdf)
   (2001), material de capacitación de la Bolsa de Comercio de Rosario.
@@ -300,6 +403,7 @@ python -m venv .venv
 .venv/Scripts/python -m pip install -r requirements.txt   # venv de Windows
 .venv/Scripts/python -m pytest -q                         # tests sin conexión
 .venv/Scripts/python scripts/graficos.py                  # descarga los datos y regenera los gráficos
+.venv/Scripts/python scripts/resultados_collar.py         # imprime las tablas del collar
 ```
 
 Las descargas crudas quedan en caché en `data/raw/`, que no se versiona.
