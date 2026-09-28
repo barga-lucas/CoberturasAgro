@@ -1,401 +1,413 @@
-# CoberturasAgro — Did hedging pay off for a Rosario soybean elevator?
+# CoberturasAgro — ¿Le convino cubrirse a un acopio de soja de Rosario?
 
-*[Versión en español](README.es.md)*
+*[English version](README.en.md) (traducción del original en español)*
 
-## Summary
+## Resumen
 
-Backtest of how a Rosario soybean elevator could have hedged with A3 Mercados futures and options,
-using daily market data from 2020 to 2026 (6 seasons, 90 scenarios in the main sample).
+Backtest de cómo podría haberse cubierto un acopio de soja de Rosario con futuros y opciones de
+A3 Mercados, con datos diarios de mercado de 2020 a 2026 (6 campañas, 90 escenarios en la
+muestra principal).
 
-- **Futures removed about 84% of the price risk** (95% interval 74–90%). For an elevator holding
-  grain, the worst case improved from −59 to −27 USD/t.
-- **Options protected much less:** a long put removed about 31% of the variance and a long call
-  about 67%. They keep part of the upside, but the premium is expensive. A collar (buy a put
-  5% below the futures price and sell a call 5% above) removed 69% at almost no cost, still
-  below futures.
-- **Holding hedged grain earned the basis recovery:** +12.8 USD/t on average (interval +7 to +17)
-  before storage and financing costs. That is about 12% a year in dollars, which is the cost level
-  at which storing stops paying.
-- **The hedge failed during the "dólar soja" FX programs (2022–2023):** it removed only 0–10% of
-  the risk, because the physical price included a special exchange rate and the futures price
-  did not.
-- **Hedging about 1.3 tonnes of futures per tonne** looks slightly better out of sample (87% vs
-  81%), but the gain is not statistically robust.
+- **Los futuros eliminaron alrededor del 84% del riesgo de precio** (intervalo del 95%: 74–90%).
+  Para un acopio con mercadería en stock, el peor resultado pasó de −59 a −27 USD/tn.
+- **Las opciones protegieron mucho menos:** comprar un put eliminó alrededor del 31% de la
+  varianza y comprar un call, alrededor del 67%. Conservan parte de la suba, pero la prima es cara.
+  Un collar (comprar un put 5% por debajo del futuro y vender un call 5% por encima) eliminó el
+  69% casi sin costo, todavía por debajo de los futuros.
+- **Guardar mercadería cubierta capturó la recuperación de la base:** +12,8 USD/tn en promedio
+  (intervalo de +7 a +17), antes de costos de almacenaje y financiación. Equivale a cerca de un
+  12% anual en dólares: el nivel de costo a partir del cual guardar deja de convenir.
+- **La cobertura falló durante el dólar soja (2022–2023):** eliminó apenas entre 0 y 10% del
+  riesgo, porque el precio físico incluía un tipo de cambio especial y el futuro no.
+- **Cubrir alrededor de 1,3 toneladas de futuros por tonelada** da un poco mejor fuera de muestra
+  (87% contra 81%), pero la mejora no es estadísticamente robusta.
 
-Everything is reproducible from public sources, with no missing values filled in and 141 offline
-tests. The limits (six seasons, option premiums that are mostly settlement valuations rather than
-trades, no fees or financing costs) are stated
-next to each result.
+Todo se reproduce con fuentes públicas, sin rellenar datos faltantes y con 141 tests que corren
+sin conexión. Los límites (seis campañas, primas de opciones que en su mayoría son valuaciones de
+ajuste y no operaciones, sin comisiones ni costo financiero) están aclarados junto a cada resultado.
 
-## The question
+## La pregunta
 
-### The elevator's problem
+### El problema del acopio
 
-A grain elevator (*acopio*) near Rosario, Argentina, buys soybeans from farmers at harvest
-(March to May), stores them in its silos and sells them months later. Between buying and
-selling it holds grain whose price can fall. That is its **price risk**.
+Un acopio de la zona de Rosario le compra soja a los productores en la cosecha (marzo a mayo),
+la guarda en sus silos y la vende meses después. Entre la compra y la venta tiene mercadería
+cuyo precio puede bajar. Ese es su **riesgo de precio**.
 
-It trades at the **Cámara Arbitral de Rosario "pizarra" price**, the reference price for
-soybeans delivered in Rosario. It moves with world soybean prices and, in Argentina, also with
-the exchange rate, export taxes (*retenciones*) and special FX programs.
+El precio con el que opera es el **precio pizarra de la Cámara Arbitral de Rosario**, el precio de
+referencia de la soja disponible en Rosario. Se mueve con el precio internacional de la soja y,
+en Argentina, también con el tipo de cambio, las retenciones y los programas cambiarios
+especiales.
 
-**Example.** In April the elevator buys 1,000 tonnes at 300 USD/t and plans to sell them in
-September. If by September the pizarra price has fallen to 260 USD/t, it loses 40 USD/t:
-40,000 dollars.
+**Ejemplo.** En abril el acopio compra 1.000 toneladas a 300 USD/tn y piensa venderlas en
+septiembre. Si para septiembre la pizarra bajó a 260 USD/tn, pierde 40 USD/tn: 40.000 dólares.
 
-### How it can hedge
+### Cómo se puede cubrir
 
-A3 Mercados (formerly Matba-Rofex) lists soybean futures and options for delivery in Rosario.
+En A3 Mercados (ex Matba-Rofex) se negocian futuros y opciones sobre soja con entrega en Rosario.
 
-- **Futures:** in April the elevator *sells* a soybean future at, say, 305 USD/t. If by
-  September the price has fallen and the future is at 265, it buys the future back and gains
-  40 USD/t, which offsets the loss on the stored grain. If the price rises, the opposite
-  happens: it gains on the grain and loses on the future. Either way, the result is almost
-  locked in.
-- **Put option:** works like insurance. The elevator pays a premium and, if the price falls,
-  the option offsets the drop. If the price rises, it loses only the premium and keeps the gain.
-- **Collar:** buy a put and pay for it by selling a call option. The elevator is protected
-  against large drops but gives up large rises.
+- **Futuro:** en abril, el acopio *vende* un futuro de soja a, por ejemplo, 305 USD/tn. Si en
+  septiembre el precio cayó y el futuro vale 265, recompra el futuro y gana 40 USD/tn. Esa
+  ganancia compensa lo que perdió con la soja guardada. Si el precio sube, pasa lo contrario:
+  gana con la soja y pierde con el futuro. En los dos casos el resultado queda casi fijo.
+- **Opción de venta (put):** funciona como un seguro. El acopio paga una prima y, si el precio
+  baja, la opción compensa la caída. Si el precio sube, no pierde nada con la opción (solo la
+  prima) y se queda con la suba.
+- **Collar:** compra un put y, para pagarlo, vende una opción de compra (call). Queda protegido
+  contra bajas fuertes, pero renuncia a las subas fuertes.
 
-No hedge is perfect. The future tracks the soybean price, but it is not exactly that day's
-Rosario pizarra price. The gap between the two is called the **basis**, and how much the basis
-moves between buying and selling is a risk the hedge cannot remove.
+La cobertura nunca es perfecta. El futuro sigue al precio de la soja, pero no es exactamente la
+pizarra de Rosario del día. La diferencia entre los dos se llama **base**, y lo que la base se
+mueve entre la compra y la venta es un riesgo que la cobertura no elimina.
 
-There is also an elevator in the opposite position. It received grain *a fijar* ("price to be
-fixed": the farmer chooses later on which day the price is set) and, to free up space, has
-already sold it at a fixed price. If the price **rises** before the farmer fixes, it has to pay
-more than it received. That elevator hedges by buying futures or calls. The project covers both
-cases.
+También existe el acopio en la situación inversa. Recibió soja "a fijar" (el productor decide
+más adelante en qué día fija el precio) y, para liberar espacio, ya la vendió a precio fijo. Si
+el precio **sube** antes de que el productor fije, tiene que pagarle más de lo que cobró. Ese
+acopio se cubre comprando futuros o calls. El proyecto analiza los dos casos.
 
-### What it answers
+### Qué se busca responder
 
-**Had an elevator hedged between 2020 and 2026, how much risk would each strategy have
-removed, what would it have cost, and when would it have failed?**
+**Si un acopio se hubiera cubierto entre 2020 y 2026, ¿cuánto riesgo le habría sacado cada
+estrategia, cuánto le habría costado y en qué situaciones no le habría servido?**
 
-The answer comes from simulating, with real daily prices, what would have happened in each
-season:
+Para responderlo se simula, con precios reales de cada día, qué habría pasado en cada campaña:
 
-1. **Basis:** how far and when the Rosario price drifts from the future. That sets the limit
-   of what a hedge can achieve.
-2. **Backtest:** the result of each strategy (no hedge, futures, options, collar) over 90
-   combinations of buying date and selling date.
-3. **Risk, not just the average:** the worst result, how much results vary and how much the
-   option premium costs.
+1. **Base:** cuánto se separa el precio de Rosario del futuro y cuándo. Eso marca el límite de
+   lo que una cobertura puede lograr.
+2. **Backtest:** el resultado de cada estrategia (sin cobertura, futuros, opciones, collar) en
+   90 combinaciones de fecha de compra y fecha de venta.
+3. **Riesgo, no solo promedio:** el peor resultado, cuánto varían los resultados y cuánto
+   cuesta la prima de las opciones.
 
-## Data
+## Datos
 
-| Source | What | Coverage | Module |
+| Fuente | Qué trae | Cobertura | Módulo |
 |---|---|---|---|
-| Cámara Arbitral de Rosario (BCR) | Daily soybean pizarra price, ARS/t | 2015 → today | `src/coberturas/data/pizarra.py` |
-| BCRA API v4 (variable 5) | Wholesale FX rate, Com. A 3500 | 2015 → today | `src/coberturas/data/fx.py` |
-| A3 Mercados public API | SOJ.ROS futures settlements (USD/t) and option premiums by strike | 2020 → today (nothing earlier) | `src/coberturas/data/a3.py` |
-| Yahoo Finance `ZS=F` | CBOT soybean, continuous front month (reference only) | 2015 → today | `src/coberturas/data/cbot.py` |
+| Cámara Arbitral de Rosario (BCR) | Precio pizarra diario de soja, ARS/tn | 2015 → hoy | `src/coberturas/data/pizarra.py` |
+| API del BCRA v4 (variable 5) | Tipo de cambio mayorista, Com. A 3500 | 2015 → hoy | `src/coberturas/data/fx.py` |
+| API pública de A3 Mercados | Ajustes de futuros SOJ.ROS (USD/tn) y primas de opciones por strike | 2020 → hoy (no hay datos anteriores) | `src/coberturas/data/a3.py` |
+| Yahoo Finance `ZS=F` | Soja CBOT, contrato más cercano (solo como referencia) | 2015 → hoy | `src/coberturas/data/cbot.py` |
 
-- **The backtest starts in 2020** because A3's public API has no earlier data. That gives
-  about six soybean seasons.
-- **Days without a pizarra price ("S/C", *sin cotización*)** are kept as explicit missing
-  values and never filled. There were 144 such days in 2023 alone, during the "dólar soja"
-  programs.
+- **El backtest arranca en 2020** porque la API de A3 no tiene datos anteriores. Eso da unas
+  seis campañas de soja.
+- **Los días sin precio pizarra ("S/C", sin cotización)** quedan como faltantes explícitos y
+  nunca se rellenan. Solo en 2023 hubo 144, durante los programas de dólar soja.
 
-## The basis (`src/coberturas/analisis/base.py`)
+## La base (`src/coberturas/analisis/base.py`)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/img/base_dark.png">
-  <img alt="Daily Rosario soybean basis 2020-2026: stable around −3 USD/t, with spikes up to 250 USD/t during the dólar soja program windows" src="docs/img/base_light.png">
+  <img alt="Base diaria de la soja en Rosario 2020-2026: estable alrededor de −3 USD/tn, con picos de hasta 250 USD/tn en las ventanas del dólar soja" src="docs/img/base_light.png">
 </picture>
 
-**Basis = Rosario physical price (pizarra ARS/t ÷ same-day BCRA A 3500) − A3 SOJ.ROS futures
-settlement (USD/t).** The reference contract is the nearest liquid month (Jan, May, Jul, Sep or
-Nov, which concentrate almost all the volume).
+**Base = precio físico de Rosario (pizarra ARS/tn ÷ A3500 del BCRA del mismo día) − ajuste del
+futuro SOJ.ROS de A3 (USD/tn).** El contrato de referencia es el mes líquido más cercano (enero,
+mayo, julio, septiembre o noviembre, que concentran casi todo el volumen).
 
-- **Futures converge to the physical price.** Over the last three market days of each expired
-  contract, the basis in normal periods has a median of **−4.1 USD/t** (middle half between
-  −6.2 and −2.6; 29 contracts). This also confirms that the A 3500 rate is the right conversion.
-- **In normal years the basis is small and stable:** about −3 USD/t, moving 4–9 USD/t day to
-  day. That is why a futures hedge works well: most of the price risk sits in the futures price.
-- **It is seasonal.** The basis is weakest at harvest (April–July, about −6 USD/t) and recovers
-  afterwards. An elevator that buys at harvest and sells later captures that recovery; the
-  backtest below measures it.
-- **It breaks during the "dólar soja" programs.** Deviations above 30 USD/t cluster in
-  Sep 2022, Nov–Dec 2022, Mar–May 2023 and Sep 2023–Feb 2024. During the Programa de
-  Incremento Exportador the peso pizarra embedded a special exchange rate, while futures did not.
+- **El futuro converge al precio físico.** En los últimos tres días de mercado de cada contrato
+  vencido, la base en períodos normales tiene una mediana de **−4,1 USD/tn** (la mitad central,
+  entre −6,2 y −2,6; 29 contratos). Esto confirma además que el A3500 es la conversión correcta.
+- **En años normales la base es chica y estable:** alrededor de −3 USD/tn, con movimientos
+  diarios de 4 a 9 USD/tn. Por eso la cobertura con futuros funciona bien: casi todo el riesgo
+  de precio está en el precio del futuro.
+- **Es estacional.** La base está más débil en cosecha (abril a julio, alrededor de
+  −6 USD/tn) y después se recupera. Un acopio que compra en cosecha y vende más tarde captura
+  esa recuperación; el backtest de abajo la mide.
+- **Se rompe durante el dólar soja.** Los desvíos de más de 30 USD/tn se concentran en
+  septiembre 2022, noviembre–diciembre 2022, marzo–mayo 2023 y septiembre 2023 a febrero 2024.
+  Durante el Programa de Incremento Exportador la pizarra en pesos incorporaba un tipo de cambio
+  especial y el futuro no.
 
-## Hedging backtest (`src/coberturas/analisis/cobertura.py`)
+## Backtest de coberturas (`src/coberturas/analisis/cobertura.py`)
 
-### Two elevator cases
+### Los dos casos del acopio
 
-Following the Bolsa de Comercio de Rosario training material on elevators, an elevator hedges
-its **net exposed position**, which can go either way:
+Según el material de capacitación de la Bolsa de Comercio de Rosario sobre acopios, el acopio
+cubre su **posición neta expuesta**, que puede estar de cualquiera de los dos lados:
 
-- **Case A — long physical.** It bought soybeans "a precio" (at a fixed price) and holds them.
-  It loses if prices fall. Hedge: sell futures, or buy a put.
-- **Case B — short physical.** It received soybeans "a fijar" (the farmer fixes the price
-  later) but already sold them "a precio" to free up silo space. It loses if prices rise before
-  the farmer fixes. Hedge: buy futures, or buy a call.
+- **Caso A: comprado en el disponible.** Compró soja "a precio" y la tiene en stock. Pierde si
+  el precio baja. Cobertura: vender futuros o comprar un put.
+- **Caso B: vendido en el disponible.** Recibió soja "a fijar" (el productor fija el precio más
+  adelante) pero ya la vendió "a precio" para liberar espacio en los silos. Pierde si el precio
+  sube antes de que el productor fije. Cobertura: comprar futuros o comprar un call.
 
-**Scenarios:** enter at the end of March, April or May (harvest intake) and exit at the end of
-any month from June to November (when farmers fix their prices). That makes 18 scenarios per
-season, 2020–2026. Results are in USD per tonne, hedging one tonne per tonne.
+**Escenarios:** entrada a fin de marzo, abril o mayo (ingreso de cosecha) y salida a fin de
+cualquier mes entre junio y noviembre (cuando los productores fijan precio). Son 18 escenarios
+por campaña, de 2020 a 2026. Los resultados están en USD por tonelada, con una tonelada cubierta
+por cada tonelada física.
 
-**Hedge contract:** the same contract for futures and options, so the comparison is fair. It is
-the first SOJ.ROS May, July or November contract at least two months after the exit month,
-because options expire about a month before their future and only those three months have
-liquid options. Options are bought at the money at the entry settlement premium and sold at
-the exit settlement premium.
+**Contrato de cobertura:** el mismo para futuros y opciones, para que la comparación sea justa.
+Es el primer contrato SOJ.ROS de mayo, julio o noviembre que venza al menos dos meses después de
+la salida, porque las opciones vencen alrededor de un mes antes que su futuro y solo esos tres
+meses tienen opciones con liquidez. Las opciones se compran en el dinero, a la prima de ajuste
+del día de entrada, y se venden a la prima de ajuste del día de salida.
 
-### Results — main sample (excluding "dólar soja" periods)
+### Resultados: muestra principal (sin los meses del dólar soja)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/img/estrategias_dark.png">
-  <img alt="Range of hedging results per strategy for cases A and B: futures hedges have the narrowest range and remove 84% of the risk; collars 69%; put 31%, call 67%; out-of-the-money options less" src="docs/img/estrategias_light.png">
+  <img alt="Rango de resultados por estrategia en los casos A y B: el futuro tiene el rango más acotado y elimina el 84% del riesgo; los collars el 69%; el put el 31% y el call el 67%; las opciones fuera del dinero, menos" src="docs/img/estrategias_light.png">
 </picture>
 
-90 scenarios, 6 seasons, USD per tonne. *Risk removed* = share of the unhedged variance that the
-hedge eliminates. The 95% intervals come from a bootstrap that resamples whole seasons.
+90 escenarios, 6 campañas, USD por tonelada. *Riesgo eliminado* = porcentaje de la varianza sin
+cobertura que la cobertura elimina. Los intervalos del 95% salen de un bootstrap que remuestrea
+campañas enteras.
 
-| | Mean | Worst | Std. dev. | Risk removed | 95% interval |
+| | Promedio | Peor caso | Desvío | Riesgo eliminado | Intervalo 95% |
 |---|---:|---:|---:|---:|---:|
-| **A** unhedged | +19.6 | −59.0 | 42.0 | — | |
-| **A** short futures | +12.8 | −27.4 | 16.6 | **84%** | 74–90% |
-| **A** long put | +13.2 | −40.6 | 31.1 | 31%\* | 18–56% |
-| **A** long put, 5% out of the money | +13.5 | −45.8 | 33.6 | 20%\* | 10–38% |
-| **A** collar (±5%) | +12.1 | −36.4 | 21.0 | 69%\* | 54–82% |
-| **B** unhedged | −19.6 | −127.3 | 42.0 | — | |
-| **B** long futures | −12.8 | −61.7 | 16.6 | **84%** | 74–90% |
-| **B** long call | −14.5 | −75.7 | 23.3 | 67%\* | 46–78% |
-| **B** long call, 5% out of the money | −15.0 | −75.7 | 25.9 | 58%\* | 28–74% |
-| **B** reverse collar (±5%) | −12.1 | −66.6 | 21.0 | 69%\* | 54–82% |
+| **A** sin cobertura | +19,6 | −59,0 | 42,0 | — | |
+| **A** venta de futuros | +12,8 | −27,4 | 16,6 | **84%** | 74–90% |
+| **A** compra de put | +13,2 | −40,6 | 31,1 | 31%\* | 18–56% |
+| **A** compra de put 5% fuera del dinero | +13,5 | −45,8 | 33,6 | 20%\* | 10–38% |
+| **A** collar (±5%) | +12,1 | −36,4 | 21,0 | 69%\* | 54–82% |
+| **B** sin cobertura | −19,6 | −127,3 | 42,0 | — | |
+| **B** compra de futuros | −12,8 | −61,7 | 16,6 | **84%** | 74–90% |
+| **B** compra de call | −14,5 | −75,7 | 23,3 | 67%\* | 46–78% |
+| **B** compra de call 5% fuera del dinero | −15,0 | −75,7 | 25,9 | 58%\* | 28–74% |
+| **B** collar inverso (±5%) | −12,1 | −66,6 | 21,0 | 69%\* | 54–82% |
 
-\* The option rows use the scenarios where the option was already listed at entry (86 to 88
-of 90). Comparing all strategies on exactly the same scenarios gives the same picture.
+\* Las filas de opciones usan los escenarios en los que la opción ya cotizaba al momento de
+entrar (entre 86 y 88 de 90). Si se comparan todas las estrategias sobre exactamente los mismos
+escenarios, el resultado es el mismo.
 
-**What it shows**
+**Qué muestra**
 
-1. **Futures remove most of the price risk:** 84% of the variance, 87% outside the 2023–2025
-   "blend" FX period. The worst result for a long elevator improves from −59 to −27 USD/t.
-2. **What is left after a futures hedge is basis, and for a long elevator it paid:
-   +12.8 USD/t on average.** That is the post-harvest basis recovery, the market's reward for
-   storing grain. The short elevator (case B) pays that same amount.
-3. **Options sit in between.** They keep part of the upside, but the premium makes them a more
-   expensive and much less complete hedge, especially the put.
-4. **The unhedged averages are not a structural result.** They mostly reflect the price rallies
-   of 2020 and 2025 in a sample of only six seasons.
+1. **El futuro elimina la mayor parte del riesgo de precio:** el 84% de la varianza, y el 87%
+   fuera del período del dólar blend (2023–2025). El peor resultado del acopio comprado mejora de
+   −59 a −27 USD/tn.
+2. **Lo que queda después de cubrirse con futuros es la base, y al acopio comprado le dio
+   ganancia: +12,8 USD/tn en promedio.** Es la recuperación de la base después de la cosecha, lo
+   que el mercado paga por almacenar. El acopio vendido (caso B) paga ese mismo monto.
+3. **Las opciones quedan en el medio.** Conservan parte de la ganancia si el precio se mueve a
+   favor, pero la prima las hace más caras y bastante menos completas como cobertura, sobre todo
+   el put.
+4. **Los promedios sin cobertura no son un resultado estructural.** Reflejan sobre todo las
+   subas de precio de 2020 y 2025 en una muestra de solo seis campañas.
 
-### Out-of-the-money options and collars (`src/coberturas/analisis/collar.py`)
+### Opciones fuera del dinero y collar (`src/coberturas/analisis/collar.py`)
 
-Same scenarios, contract and premium rule as above. The **5% out-of-the-money put** has the
-listed strike closest to 95% of the entry futures price; the **5% out-of-the-money call**, the
-one closest to 105%. If the closest listed strike is more than 2 percentage points away from
-that target, the leg is marked unavailable instead of silently using another strike. The
-**collar** of case A buys that put and sells that call; the **reverse collar** of case B buys the
-call and sells the put.
+Mismos escenarios, mismo contrato y misma regla de primas que arriba. El **put 5% fuera del
+dinero** es el de strike listado más cercano al 95% del futuro del día de entrada; el **call 5%
+fuera del dinero**, el más cercano al 105%. Si el strike más cercano se aleja más de 2 puntos
+porcentuales de ese objetivo, la pata queda como no disponible, en lugar de usar otro strike sin
+avisar. El **collar** del caso A compra ese put y vende ese call; el **collar inverso** del caso B
+compra el call y vende el put.
 
-- **The collar removed 69% of the risk, far more than a put alone (31% at the money, 20% out of
-  the money), and cost almost nothing:** the call sold was worth slightly more than the put
-  bought, so the elevator received about 1 USD/t at entry (median). Its average result
-  (+12.1 USD/t) is close to the futures hedge (+12.8).
-- **Futures are still the better protection.** Their worst case is −27 USD/t against −36 for
-  the collar and −46 for the out-of-the-money put. The collar only makes sense for an elevator
-  willing to bear price moves of up to 5% in either direction.
-- **Variance counts gains as risk.** A put is meant to keep the upside, and that upside
-  increases variance, so "risk removed" understates what a put is for. The worst case is the
-  fairer comparison for options, and it points the same way.
-- **The band width matters in a consistent way.** The wider the band, the less protection:
+- **El collar eliminó el 69% del riesgo, mucho más que un put solo (31% en el dinero, 20% fuera
+  del dinero), y casi no costó nada:** el call vendido valía un poco más que el put comprado, así
+  que el acopio cobró alrededor de 1 USD/tn al entrar (mediana). Su resultado promedio
+  (+12,1 USD/tn) es parecido al de la cobertura con futuros (+12,8).
+- **El futuro sigue protegiendo mejor.** Su peor caso es −27 USD/tn, contra −36 del collar y −46
+  del put fuera del dinero. El collar solo tiene sentido para un acopio dispuesto a asumir
+  movimientos de precio de hasta 5% para cualquier lado.
+- **La varianza cuenta las ganancias como riesgo.** Un put sirve justamente para quedarse con la
+  suba, y esa suba aumenta la varianza, así que el "riesgo eliminado" subestima para qué sirve un
+  put. Para comparar opciones es más justo mirar el peor caso, y la conclusión es la misma.
+- **El ancho de la banda importa de forma coherente.** Cuanto más ancha, menos protección:
 
-| Strike distance | Scenarios | A: put out of the money | A: collar | B: call out of the money | B: reverse collar |
+| Distancia del strike | Escenarios | A: put fuera del dinero | A: collar | B: call fuera del dinero | B: collar inverso |
 |---|---:|---:|---:|---:|---:|
 | 3% | 76 | 25% | 77% | 62% | 77% |
 | 5% | 86 | 20% | 69% | 55% | 69% |
 | 10% | 78 | 10% | 55% | 46% | 55% |
 
-  Each row compares all strategies on the same scenarios, which is why the 5% row can differ
-  slightly from the main table. The number of scenarios changes because a strike close enough
-  to each target is not always listed.
+  Cada fila compara todas las estrategias sobre los mismos escenarios; por eso la fila del 5%
+  puede diferir un poco de la tabla principal. La cantidad de escenarios cambia porque no
+  siempre hay un strike listado lo bastante cerca de cada objetivo.
 
-**Liquidity caveat.** A3 publishes a settlement premium for every listed strike, even on days
-without trades. On the entry day, the 5% out-of-the-money put had trades in only 6 of 28
-positions and the call in 12 of 29 (on the exit day: 9 of 60 and 23 of 69), although all of
-them had open interest. **Most of these premiums are the exchange's valuation, not prices at
-which someone actually traded**, so the option and collar results are less reliable than the
-futures results. Selling the call also requires margin, whose financing cost is not included.
-In the "dólar soja" periods collars failed like every other hedge (about 9% of the risk
-removed).
+**Advertencia sobre la liquidez.** A3 publica una prima de ajuste para cada strike listado,
+aunque ese día no se haya operado. El día de entrada, el put 5% fuera del dinero tuvo operaciones
+en solo 6 de 28 posiciones y el call en 12 de 29 (el día de salida: 9 de 60 y 23 de 69), aunque
+todas tenían interés abierto. **La mayoría de estas primas son la valuación del mercado, no
+precios a los que alguien efectivamente operó**, así que los resultados con opciones y collar son
+menos confiables que los de futuros. Además, vender el call exige margen, cuyo costo financiero no
+se incluye. En los meses del dólar soja el collar falló como todas las coberturas (eliminó
+alrededor del 9% del riesgo).
 
-**Synthetic put.** A Bolsa de Comercio de Rosario course on hedging strategies (Cavarozzi, 2026)
-recommends the *synthetic put* (sell a future and buy a call at the same strike) when calls are
-more liquid than puts, which is common on the local market. The data agree on liquidity: the
-out-of-the-money calls above traded about twice as often as the puts. Two checks on whether
-the choice changes the hedge:
+**Put sintético.** Un curso de la Bolsa de Comercio de Rosario sobre estrategias de cobertura
+(Cavarozzi, 2026) recomienda el *put sintético* (vender un futuro y comprar un call del mismo
+strike) cuando los calls tienen más liquidez que los puts, algo habitual en el mercado local.
+Los datos coinciden en la liquidez: los calls fuera del dinero de arriba se operaron alrededor
+del doble de veces que los puts. Para ver si la elección cambia la cobertura hay dos controles:
 
-- **Put-call parity holds in A3 settlement premiums on any given day:** across about 15,000
-  call/put pairs with strikes within 5% of the future (2020–2026), C − P − (F − K) has a median
-  of 0.0 USD/t, and 90% of the pairs are within ±2 USD/t.
-- **Over the actual holding periods the two hedges end up close, but not identical.** In the 64
-  main-sample scenarios where a call with the put's strike was listed on both dates, the
-  synthetic put differed from the put by a median of 1.0 USD/t (90% of scenarios within
-  3.7 USD/t, at most 5.5). The difference is the change in the parity gap between entry and
-  exit. Protection is about the same: 41% of the risk removed against 38% for the put on those
-  same scenarios, with similar worst cases (−40.6 and −40.1 USD/t). In the other 22 scenarios there was no
-  call listed at the put's strike on the entry day.
+- **La paridad put-call se cumple en las primas de ajuste de A3 en cada día:** en unos 15.000
+  pares call/put con strikes a menos del 5% del futuro (2020–2026), C − P − (F − K) tiene una
+  mediana de 0,0 USD/tn y el 90% de los pares queda dentro de ±2 USD/tn.
+- **En los períodos reales de cobertura, las dos terminan cerca pero no son idénticas.** En los
+  64 escenarios de la muestra principal en los que había un call del strike del put en las dos
+  fechas, el put sintético se diferenció del put en 1,0 USD/tn de mediana (el 90% de los
+  escenarios dentro de 3,7 USD/tn, como máximo 5,5). La diferencia es el cambio del desvío de
+  paridad entre la entrada y la salida. La protección es casi la misma: 41% del riesgo eliminado
+  contra 38% del put en esos mismos escenarios, con peores casos parecidos (−40,6 y −40,1 USD/tn). En los otros
+  22 escenarios no había un call listado con el strike del put el día de entrada.
 
-In this sample the choice between a put and a synthetic put comes down to liquidity and fees
-rather than protection.
+En esta muestra, elegir entre un put y un put sintético depende de la liquidez y las comisiones,
+no de la protección.
 
-### Robustness (`src/coberturas/analisis/robustez.py`)
+### Robustez (`src/coberturas/analisis/robustez.py`)
 
-**Confidence intervals.** With only six seasons, and 18 highly correlated scenarios within each
-one, a single number like "84%" overstates precision. The intervals in the table above resample
-whole seasons (5,000 draws), so they reflect how much the result depends on which years happened
-to be in the sample. The futures hedge stays clearly effective (74–90%) and clearly beats the put
-(18–56%); against the call (46–78%) the intervals overlap slightly. The average basis gain of the
-long elevator (+12.8 USD/t) has an interval of +7 to +17 USD/t, entirely above zero.
+**Intervalos de confianza.** Con solo seis campañas, y 18 escenarios muy correlacionados dentro
+de cada una, un número como "84%" aparenta más precisión de la que tiene. Los intervalos de la
+tabla de arriba remuestrean campañas enteras (5.000 veces), así que muestran cuánto depende el
+resultado de qué años tocaron en la muestra. La cobertura con futuros sigue siendo claramente
+efectiva (74–90%) y le gana con claridad al put (18–56%); contra el call (46–78%) los intervalos se
+superponen un poco. La ganancia de base promedio del acopio comprado (+12,8 USD/tn) tiene un
+intervalo de +7 a +17 USD/tn, entero por encima de cero.
 
-**Is hedging one-for-one the right size?** The standard benchmark in the literature is the
-*minimum-variance hedge ratio* (Ederington, 1979): the number of tonnes of futures per tonne of
-physical that minimises the variance of the hedged position. It is estimated **out of sample**:
-the ratio applied in each season is fitted only on earlier seasons, which had all finished before
-the elevator enters in March.
+**¿Cubrirse 1 a 1 es el tamaño correcto?** La referencia estándar en la literatura es el *ratio
+de cobertura de mínima varianza* (Ederington, 1979): cuántas toneladas de futuros por tonelada
+física minimizan la varianza de la posición cubierta. Se estima **fuera de muestra**: el ratio que
+se aplica en cada campaña se calcula solo con campañas anteriores, que ya habían terminado cuando
+el acopio entra en marzo.
 
-| Seasons 2021–2026 (72 scenarios) | Risk removed | Worst |
+| Campañas 2021–2026 (72 escenarios) | Riesgo eliminado | Peor caso |
 |---|---:|---:|
-| One-for-one (1:1) | 81% | −27.4 |
-| Minimum-variance ratio, out of sample | 87% | −23.1 |
+| 1 a 1 | 81% | −27,4 |
+| Ratio de mínima varianza, fuera de muestra | 87% | −23,1 |
 
-- **The estimated ratio is about 1.3 and very stable** (1.27–1.41 across seasons). The physical
-  price moved about 45% more than the hedge future (standard deviation 34 vs 24 USD/t). That is
-  expected, because the hedge uses deferred contracts (November, or the next May), and deferred
-  futures are less volatile than the spot price (the "Samuelson effect").
-- **But the improvement is not robust.** The ratio of 1.3 beats one-for-one in 2024–2026 and loses
-  in 2021–2022, and most of the gain comes from 2025. The 95% interval of the improvement goes from
-  −1 to +8 percentage points and includes zero. This matches Wang, Wu and Yang (2015), who find
-  that estimated ratios rarely beat the simple one-for-one hedge reliably out of sample.
-- **Practical reading:** hedging somewhat more than one-for-one when using deferred contracts is
-  reasonable, but the data are not strong enough to recommend a precise ratio.
+- **El ratio estimado ronda 1,3 y es muy estable** (entre 1,27 y 1,41 según la campaña). El precio
+  físico se movió alrededor de un 45% más que el futuro de cobertura (desvío de 34 contra
+  24 USD/tn). Es lo esperable, porque la cobertura usa contratos lejanos (noviembre o el mayo
+  siguiente), y los futuros lejanos son menos volátiles que el precio disponible (el "efecto
+  Samuelson").
+- **Pero la mejora no es robusta.** El ratio de 1,3 le gana al 1 a 1 en 2024–2026 y pierde en
+  2021–2022, y la mayor parte de la ganancia viene de 2025. El intervalo del 95% de la mejora va de
+  −1 a +8 puntos porcentuales e incluye el cero. Coincide con Wang, Wu y Yang (2015), que
+  encuentran que los ratios estimados rara vez le ganan de forma confiable al 1 a 1 fuera de
+  muestra.
+- **Lectura práctica:** cubrirse algo más que 1 a 1 cuando se usan contratos lejanos es razonable,
+  pero los datos no alcanzan para recomendar un ratio preciso.
 
-The intervals keep the estimated ratios fixed, so they do not include the uncertainty of
-re-estimating them. They also measure variance across pooled, overlapping scenarios, not the
-annual results of a real portfolio.
+Los intervalos mantienen fijos los ratios estimados, así que no incluyen la incertidumbre de
+volver a estimarlos. Además miden la varianza sobre escenarios superpuestos agrupados, no los
+resultados anuales de una cartera real.
 
-### Does storing pay? Break-even storage and financing cost
+### ¿Conviene almacenar? Punto de equilibrio del almacenaje y la financiación
 
-The +12.8 USD/t is **before storage and financing costs**. There is no reliable public source
-for current storage tariffs or elevator funding rates, so instead of assuming them the backtest
-reports the **break-even**: the cost that would bring each scenario's result to zero.
+Los +12,8 USD/tn son **antes de los costos de almacenaje y financiación**. No hay una fuente
+pública confiable con tarifas de almacenaje ni tasas de financiación actuales de los acopios,
+así que en lugar de suponerlas el backtest informa el **punto de equilibrio**: el costo que
+llevaría a cero el resultado de cada escenario.
 
-| Main sample (90 scenarios) | 25th pct | Median | 75th pct |
+| Muestra principal (90 escenarios) | Percentil 25 | Mediana | Percentil 75 |
 |---|---:|---:|---:|
-| Basis gain per month of storage (USD/t per month) | 0.7 | **2.8** | 4.8 |
-| The same gain as a simple annual USD return on the grain's value | 2% | **12%** | 21% |
+| Ganancia de base por mes de almacenaje (USD/tn por mes) | 0,7 | **2,8** | 4,8 |
+| La misma ganancia como tasa anual simple en USD sobre el valor de la soja | 2% | **12%** | 21% |
 
-- The hedged position made money in **82%** of the scenarios before costs. It would still have
-  covered a storage plus financing cost of **2 USD/t per month in 58%** of them, and of
-  3 USD/t per month in 48%.
-- **In finance terms:** in the median scenario, storing hedged soybeans paid about 12% a year
-  in dollars on the capital tied up in grain. If the elevator's funding and storage costs are
-  below that, carrying hedged inventory was worth it.
-- Exits in October and November hedge with the next year's May contract (new crop), so their
-  larger gains include the old-crop/new-crop spread and are not directly comparable with
-  June–September exits.
+- La posición cubierta ganó plata en el **82%** de los escenarios antes de costos. Habría
+  cubierto un costo de almacenaje más financiación de **2 USD/tn por mes en el 58%** de ellos, y
+  de 3 USD/tn por mes en el 48%.
+- **En términos financieros:** en el escenario mediano, guardar soja cubierta rindió cerca del
+  12% anual en dólares sobre el capital inmovilizado en granos. Si el costo de fondeo más el
+  almacenaje del acopio está por debajo de eso, guardar mercadería cubierta convenía.
+- Las salidas de octubre y noviembre se cubren con el contrato de mayo del año siguiente
+  (cosecha nueva), así que su ganancia mayor incluye la diferencia entre cosecha vieja y nueva y
+  no se puede comparar directamente con las salidas de junio a septiembre.
 
-### "Dólar soja" periods, reported separately
+### Los meses del dólar soja, aparte
 
-24 scenarios in 2022–2023 whose holding period overlaps a Programa de Incremento Exportador
-window. **Here the hedge stopped working: it removed only 0–10% of the risk.** The peso pizarra
-included the special exchange rate while A3 futures did not, so the link between physical and
-futures prices broke. A short elevator hedged with futures (case B) averaged −43 USD/t, with a
-worst case of −203 USD/t. **A futures hedge protects against price moves, not against a change
-in exchange-rate rules.**
+24 escenarios de 2022–2023 cuyo período de tenencia se superpone con alguna ventana del Programa
+de Incremento Exportador. **Acá la cobertura dejó de funcionar: eliminó apenas entre el 0 y el
+10% del riesgo.** La pizarra en pesos incluía el tipo de cambio especial y los futuros de A3 no,
+así que se rompió la relación entre el precio físico y el futuro. El acopio vendido y cubierto
+con futuros (caso B) perdió en promedio 43 USD/tn, con un peor caso de −203 USD/tn. **El futuro
+te cubre de los movimientos de precio, no de un cambio en las reglas cambiarias.**
 
-This is an Argentine case of a phenomenon that is well studied in the United States:
-**non-convergence**, when the physical price at the delivery point stops tracking the futures price.
-Adjemian, Garcia, Irwin and Smith (2013) document it in US corn, soybean and wheat markets in
-2005–2010. Goswami, Karali and Adjemian (2023) show that in those periods futures lose much of their
-value as a hedge, whatever hedge ratio is used. The difference here is the cause: it came from an
-exchange-rate regulation, not from storage economics.
+Es un caso argentino de un fenómeno muy estudiado en Estados Unidos: la **falta de convergencia**,
+cuando el precio físico en el punto de entrega deja de seguir al futuro. Adjemian, Garcia, Irwin y
+Smith (2013) lo documentan en maíz, soja y trigo de EE.UU. entre 2005 y 2010. Goswami, Karali y
+Adjemian (2023) muestran que en esos períodos el futuro pierde buena parte de su valor como
+cobertura, sin importar qué ratio se use. La diferencia es la causa: acá vino de una regulación
+cambiaria, no de la economía del almacenaje.
 
-| Regime | Dates | Source |
+| Régimen | Fechas | Fuente |
 |---|---|---|
-| PIE I | 2022-09-05 → 2022-09-30 | Decree 576/2022 |
-| PIE II | 2022-11-28 → 2022-12-30 | Decree 787/2022 |
-| PIE III | 2023-04-10 → 2023-05-31 | Decree 194/2023 |
-| PIE IV and extensions | 2023-09-05 → 2023-12-10 | Decrees 443, 492, 549 and 597/2023 |
-| 80/20 "blend" | 2023-12-13 → 2025-04-14 | Decree 28/2023, repealed by 269/2025 |
+| PIE I | 05/09/2022 → 30/09/2022 | Decreto 576/2022 |
+| PIE II | 28/11/2022 → 30/12/2022 | Decreto 787/2022 |
+| PIE III | 10/04/2023 → 31/05/2023 | Decreto 194/2023 |
+| PIE IV y prórrogas | 05/09/2023 → 10/12/2023 | Decretos 443, 492, 549 y 597/2023 |
+| Dólar blend 80/20 | 13/12/2023 → 14/04/2025 | Decreto 28/2023, derogado por el 269/2025 |
 
-The blend period is flagged but kept in the main sample, because the basis stayed normal
-during 2024.
+El período del blend está marcado, pero queda dentro de la muestra principal porque durante
+2024 la base se mantuvo normal.
 
-### Limitations
+### Limitaciones
 
-- **Small sample:** six seasons, and the 18 scenarios within a season are highly correlated.
-- **No costs in the results:** commissions and the financing of margins and premiums are left
-  out; storage and financing are covered by the break-even above.
-- **Retrospective monthly rule:** if the last market day of a month has no price, the previous
-  day is used, which can only be known after the fact.
-- **Hedge ratios: one-for-one in the main results**; the minimum-variance ratio is tested
-  separately. **A single strike rule (at the money).**
+- **Muestra chica:** seis campañas, y los 18 escenarios de una misma campaña están muy
+  correlacionados.
+- **Los resultados no incluyen costos:** quedan afuera las comisiones y la financiación de
+  márgenes y primas; el almacenaje y la financiación de la mercadería se tratan con el punto de
+  equilibrio de arriba.
+- **Regla mensual retrospectiva:** si el último día de mercado del mes no tiene precio, se usa
+  el día anterior, algo que solo se puede saber después.
+- **Relación de cobertura: 1 a 1 en los resultados principales**; el ratio de mínima varianza se
+  prueba aparte. **Una sola regla de strike (en el dinero).**
 
-## Methodological choices
+## Decisiones metodológicas
 
-1. **Hedger: grain elevator**, in its two possible net positions (long and short physical).
-2. **Pizarra converted to USD with the BCRA A 3500 rate** of the same day.
-3. **No silent approximations:** missing prices stay missing, and invalid or ambiguous data
-   stops the code instead of being guessed.
-4. **Contract expiry inferred from the data:** a contract counts as expired only if it stopped
-   trading within or after its delivery month. There is no downloadable official calendar.
-5. **"Dólar soja" periods reported separately**, with dates taken from the decrees.
+1. **Quien se cubre: un acopio**, en sus dos posiciones netas posibles (comprado y vendido en el
+   disponible).
+2. **Pizarra convertida a dólares con el A3500 del BCRA** del mismo día.
+3. **Sin aproximaciones silenciosas:** los precios faltantes quedan como faltantes, y un dato
+   inválido o ambiguo detiene el código en lugar de adivinarse.
+4. **Vencimiento de contratos inferido de los datos:** un contrato cuenta como vencido solo si
+   dejó de cotizar dentro de su mes de entrega o después. No hay un calendario oficial
+   descargable.
+5. **Los meses del dólar soja se informan aparte**, con fechas tomadas de los decretos.
 
-## Related work
+## Trabajos relacionados
 
-- **Ederington (1979)**, *The Hedging Performance of the New Futures Markets*, Journal of
-  Finance: the minimum-variance hedge ratio and the "share of variance removed" measure used here.
-- **Wang, Wu and Yang (2015)**, [*Hedging with Futures: Does Anything Beat the Naïve Hedging
-  Strategy?*](https://pubsonline.informs.org/doi/10.1287/mnsc.2014.2028), Management Science: the
-  one-for-one hedge is hard to beat out of sample. This project reaches the same conclusion.
-- **Adjemian, Garcia, Irwin and Smith (2013)**, [*Non-Convergence in Domestic Commodity Futures
+- **Ederington (1979)**, *The Hedging Performance of the New Futures Markets*, Journal of Finance:
+  el ratio de mínima varianza y la medida de "riesgo eliminado" que usa este proyecto.
+- **Wang, Wu y Yang (2015)**, [*Hedging with Futures: Does Anything Beat the Naïve Hedging
+  Strategy?*](https://pubsonline.informs.org/doi/10.1287/mnsc.2014.2028), Management Science: fuera
+  de muestra es difícil ganarle al 1 a 1. Este proyecto llega a la misma conclusión.
+- **Adjemian, Garcia, Irwin y Smith (2013)**, [*Non-Convergence in Domestic Commodity Futures
   Markets*](https://ers.usda.gov/sites/default/files/_laserfiche/publications/43777/39376_eib115.pdf),
   USDA ERS.
-- **Goswami, Karali and Adjemian (2023)**, [*Hedging with futures during nonconvergence in commodity
+- **Goswami, Karali y Adjemian (2023)**, [*Hedging with futures during nonconvergence in commodity
   markets*](https://www.sciencedirect.com/science/article/pii/S2405851323000545), Journal of
-  Commodity Markets: the closest analogue to the "dólar soja" finding.
+  Commodity Markets: el antecedente más cercano al hallazgo del dólar soja.
 - **Gorostiaga (2017)**, [*Caracterización de la curva de futuros de soja…: Rosario y
-  Chicago*](https://repositorio.utdt.edu/items/34cd5eeb-a536-49d2-ad23-7830d2afafe4), master's
-  thesis, Universidad Torcuato Di Tella: the Rosario futures curve. It does not cover the basis or
-  hedging.
+  Chicago*](https://repositorio.utdt.edu/items/34cd5eeb-a536-49d2-ad23-7830d2afafe4), tesis de
+  maestría, Universidad Torcuato Di Tella: la curva de futuros de Rosario. No analiza la base ni
+  las coberturas.
 
-No public project was found that backtests elevator hedging with A3 Mercados futures and options
-against the Rosario physical price.
+No se encontró ningún proyecto público que haga un backtest de coberturas de un acopio con
+futuros y opciones de A3 Mercados contra el precio físico de Rosario.
 
-## Sources
+## Fuentes
 
-- Price data: [Cámara Arbitral de Cereales de Rosario](https://www.cac.bcr.com.ar/es/precios-de-pizarra/consultas),
-  [BCRA statistics API](https://api.bcra.gob.ar/estadisticas/v4.0/Monetarias/5),
-  A3 Mercados public API used by [cem.matbarofex.com.ar](https://cem.matbarofex.com.ar/),
+- Datos de precios: [Cámara Arbitral de Cereales de Rosario](https://www.cac.bcr.com.ar/es/precios-de-pizarra/consultas),
+  [API de estadísticas del BCRA](https://api.bcra.gob.ar/estadisticas/v4.0/Monetarias/5),
+  API pública de A3 Mercados que usa [cem.matbarofex.com.ar](https://cem.matbarofex.com.ar/),
   [Yahoo Finance ZS=F](https://finance.yahoo.com/quote/ZS=F).
-- Hedging strategies and synthetic options: Cavarozzi, F., *Estrategias de cobertura con futuros y
-  opciones agrícolas* (2026), Bolsa de Comercio de Rosario course slides (not publicly available).
-- How elevators operate: Landrein, [*Acopios*](https://www.bcr.com.ar/sites/default/files/2018-10/acopio.pdf),
-  and Rosa, [*Acopios: ¿mayor giro o mayor almacenamiento?*](https://www.capacitacion.bcr.com.ar/Documentos/EdicionesBCR/5/acopio_rossa.pdf)
-  (2001), Bolsa de Comercio de Rosario training material.
-- Regime dates: decrees [576/2022](https://www.boletinoficial.gob.ar/detalleAviso/primera/270972/20220905),
+- Estrategias de cobertura y opciones sintéticas: Cavarozzi, F., *Estrategias de cobertura con
+  futuros y opciones agrícolas* (2026), diapositivas de un curso de la Bolsa de Comercio de Rosario
+  (no están publicadas).
+- Cómo opera un acopio: Landrein, [*Acopios*](https://www.bcr.com.ar/sites/default/files/2018-10/acopio.pdf),
+  y Rosa, [*Acopios: ¿mayor giro o mayor almacenamiento?*](https://www.capacitacion.bcr.com.ar/Documentos/EdicionesBCR/5/acopio_rossa.pdf)
+  (2001), material de capacitación de la Bolsa de Comercio de Rosario.
+- Fechas de los regímenes: decretos [576/2022](https://www.boletinoficial.gob.ar/detalleAviso/primera/270972/20220905),
   [787/2022](https://www.boletinoficial.gob.ar/detalleAviso/primera/276571/20221128),
   [194/2023](https://www.boletinoficial.gob.ar/detalleAviso/primera/284120/20230410),
   [443/2023](https://www.boletinoficial.gob.ar/detalleAviso/primera/293431/20230905),
   [492/2023](https://www.boletinoficial.gob.ar/detalleAviso/primera/295254/20231002),
-  [597/2023](https://www.argentina.gob.ar/normativa/nacional/decreto-597-2023-393336/texto) and
+  [597/2023](https://www.argentina.gob.ar/normativa/nacional/decreto-597-2023-393336/texto) y
   [28/2023](https://servicios.infoleg.gob.ar/infolegInternet/anexos/395000-399999/395255/norma.htm).
 
-## Running it
+## Cómo correrlo
 
 ```bash
 python -m venv .venv
-.venv/Scripts/python -m pip install -r requirements.txt   # Windows venv
-.venv/Scripts/python -m pytest -q                         # offline tests
-.venv/Scripts/python scripts/graficos.py                  # downloads the data and redraws the charts
-.venv/Scripts/python scripts/resultados_collar.py         # prints the collar tables
+.venv/Scripts/python -m pip install -r requirements.txt   # venv de Windows
+.venv/Scripts/python -m pytest -q                         # tests sin conexión
+.venv/Scripts/python scripts/graficos.py                  # descarga los datos y regenera los gráficos
+.venv/Scripts/python scripts/resultados_collar.py         # imprime las tablas del collar
 ```
 
-Raw downloads are cached in `data/raw/`, which is not versioned.
+Las descargas crudas quedan en caché en `data/raw/`, que no se versiona.
 
-## License
+## Licencia
 
-[MIT](LICENSE). The data is not redistributed: each source keeps its own terms.
+[MIT](LICENSE). Los datos no se redistribuyen: cada fuente mantiene sus propias condiciones.
