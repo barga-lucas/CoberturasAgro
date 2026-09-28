@@ -282,3 +282,7 @@ python -m venv .venv
 ```
 
 Las descargas crudas quedan en caché en `data/raw/`, que no se versiona.
+
+## Licencia
+
+[MIT](LICENSE). Los datos no se redistribuyen: cada fuente mantiene sus propias condiciones.

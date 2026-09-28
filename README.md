@@ -268,3 +268,7 @@ python -m venv .venv
 ```
 
 Raw downloads are cached in `data/raw/`, which is not versioned.
+
+## License
+
+[MIT](LICENSE). The data is not redistributed: each source keeps its own terms.
